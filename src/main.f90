@@ -18,7 +18,7 @@ type (data) :: matrices
 
 integer ::  T1, T2, rate, ios, restart, maxit, wt1, wt2, wrate, &
  order, near_zone, expansion_order, mueller, ave, halton_init
-double precision :: k, tol, khat(3), E0(3), cell_size, phi, theta, ka
+double precision :: k, tol, khat(3), E0(3), cell_size, phi, theta, ka, elem_ka
 character(5) :: projector
 
 double precision, dimension(:,:), allocatable :: mueller_mat, mueller_mat_ave
@@ -84,8 +84,8 @@ call system_clock(wt1,wrate)
    near_zone  = 1
    expansion_order = 0
    tname = 'T.h5'
-   Tmat = 0
-
+   Tmat = 1
+   elem_ka = 10
    num_args = command_argument_count()
    do i_arg = 1,num_args,2
       call get_command_argument(i_arg,arg_name)
@@ -153,6 +153,10 @@ call system_clock(wt1,wrate)
       case('-Tmatrix')
          call get_command_argument(i_arg+1,arg)
          read(arg,*) Tmat
+      case('-elem_ka')
+         call get_command_argument(i_arg+1,arg)
+         read(arg,*) elem_ka
+
       case('-help')
          print*, 'Command line parameters' 
          print*, '-mesh mesh.h5      "Read mesh from file"' 
@@ -283,9 +287,11 @@ print*,'Done in', real(T2-T1)/real(rate), 'seconds'
 if(Tmat == 1) then
 
 
-   ka = k * (maxval([mesh%Nx,mesh%Ny,mesh%Nz]) *mesh%delta)/2.0
+   !ka = k * 
 
-   Nmax = truncation_order(ka) 
+   Nmax = truncation_order(elem_ka) 
+   
+
    allocate(T_mat(2*((Nmax+1)**2-1), 2*((Nmax+1)**2-1)))
 
    allocate(Taa((Nmax+1)**2-1, (Nmax+1)**2-1))
@@ -293,6 +299,8 @@ if(Tmat == 1) then
    allocate(Tba((Nmax+1)**2-1, (Nmax+1)**2-1))
    allocate(Tbb((Nmax+1)**2-1, (Nmax+1)**2-1))
    
+   print*, 'Tmatrix size:', size(Taa,1)*2, size(Taa,2)*2
+
    call compute_T_matrix(matrices, mesh, k, Nmax, Taa, Tab, Tba, Tbb)
    
    call T_write2file(Taa, Tab, Tba, Tbb, tname)

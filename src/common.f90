@@ -608,10 +608,13 @@ function truncation_order(ka) result(Nmax)
 real(dp) :: ka 
 integer :: Nmax
 
-if(ka > 1) then
-   Nmax = floor(ka + 4.0* (ka)**(1.0/3.0)) 
+if(ka > 1.0d0) then
+   Nmax = floor(ka + 3.0* (ka)**(1.0/3.0))
 else
-   Nmax = 4
+  if(ka<2.0d0) Nmax = 4
+   if(ka<0.1d0) Nmax = 3
+   if(ka<0.01d0) Nmax = 2
+   if(ka<0.0001d0) Nmax = 1
 end if
 
 end function truncation_order
