@@ -16,9 +16,9 @@ FCFLAGS += -I/usr/include
 #INCLUDES = -I/usr/local/include/ -I/usr/include/hdf5/serial/
 INCLUDES = -I/usr/local/include -I/usr/local/hdf5/include/
 
-OBJECTS = common.o sfunctions.o mie.o translations.o possu.o sparse.o singularity_subtraction.o singularity_subtraction_N.o integrals.o integration_points.o geometry.o sparse_mat.o io.o precorrection.o projection.o build_G.o gmres_module.o rhs.o field.o solver.o transformation_matrices.o T_matrix.o main.o
+OBJECTS = common.o sfunctions.o translations.o mie.o possu.o sparse.o singularity_subtraction.o singularity_subtraction_N.o integrals.o integration_points.o geometry.o sparse_mat.o io.o precorrection.o projection.o build_G.o gmres_module.o rhs.o field.o solver.o transformation_matrices.o T_matrix.o main.o
 
-OBJECTS2 = common.o io.o sfunctions.o mie.o main_multiT.o
+OBJECTS2 = common.o io.o sfunctions.o translations.o mie.o main_multiT.o
 
 #Required libraries: Lapack, FFTW3, HDF5
 

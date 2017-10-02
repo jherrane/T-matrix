@@ -1,6 +1,7 @@
 module mie
 use sfunctions
 use common
+use translations
 
 
 implicit none
@@ -249,6 +250,84 @@ end do
 
 
 end subroutine planewave
+
+
+
+!______________________________________________________!!
+!
+! The routine computes the SVWF expansion coefficients 
+! for a time harmonic x-and y-polarized planewave
+! propagating +z-direction  with the wave number k
+! 
+!_____________________________________________________!!
+subroutine planewave2(Nmax, k, a_nm, b_nm, a_nm2, b_nm2)
+complex(dp), dimension((Nmax+1)**2-1) :: a_nm, b_nm, a_nm2, b_nm2
+integer :: Nmax
+real(dp) :: k
+
+integer :: ind, n, m, mm, las, nm_in
+real(dp) :: scale, C, E0, omega
+complex(dp) :: q
+
+complex(dp), dimension(:), allocatable :: rotD
+integer, dimension(:,:), allocatable :: indD
+
+E0 = 1
+omega = k*299792458.0
+ind = 0
+
+
+nm_in = (Nmax+1)**2-1
+
+do n = 1,Nmax
+
+   scale = sqrt(dble(n*(n+1)))
+
+   do m = -n, n 
+      ind = ind + 1
+      mm = abs(m)
+      
+      C = scale*E0*sqrt(pi*(2*n+1d0)) / (n*(n+1d0)) * sqrt(factorial(n+1)/factorial(n-1))
+
+      q = -(dcmplx(0.0,1.0)**n*k)/(omega*mu)
+
+      if(mm == 1) then 
+         a_nm(ind) = dcmplx(0.0,1.0)**(n-1.0) * C
+         b_nm(ind) = -dcmplx(0.0,1.0)**(n+1.0) * C
+
+         if(m == -1) then 
+            a_nm(ind) = -a_nm(ind)
+         
+         end if
+
+      else 
+         a_nm(ind) = dcmplx(0.0,0.0)
+         b_nm(ind) = dcmplx(0.0,0.0)
+      end if
+        a_nm(ind) = -a_nm(ind) 
+         b_nm(ind) = -b_nm(ind) 
+   end do
+end do
+
+
+las = 0
+do n = 1,Nmax
+   las = las + (2*n+1)**2
+end do
+
+allocate(rotD(las))
+allocate(indD(las,2))
+
+call sph_rotation_sparse(0.0d0, -pi/2.0d0, Nmax, rotD, indD)
+a_nm2 = sparse_matmul(rotD,indD,a_nm,nm_in)
+b_nm2 = sparse_matmul(rotD,indD,b_nm,nm_in)
+
+
+
+
+end subroutine planewave2
+
+
 
 
 !*****************************************************************

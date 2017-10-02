@@ -81,8 +81,8 @@ end subroutine write2file
 
 subroutine real_write2file(A,fname)
 double precision, intent(in) :: A(:,:)
-CHARACTER(LEN=28), intent(in) :: fname
-CHARACTER(LEN=28) :: filename 
+CHARACTER(LEN=38), intent(in) :: fname
+CHARACTER(LEN=38) :: filename 
 
 CHARACTER(LEN=7), PARAMETER :: dsetname1 = "mueller" ! Dataset name
 

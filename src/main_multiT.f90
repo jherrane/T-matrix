@@ -1,21 +1,24 @@
 program main_multiT
 use io
 use mie
-
+use translations
 
 implicit none
 
 
 CHARACTER(LEN=38) :: arg_name, arg
-CHARACTER(LEN=38) :: T_in, T_multi, T_coh, x1, Tname
+CHARACTER(LEN=38) :: T_in, T_multi, T_coh, x1, Tname, mueller_file
 
-integer :: num_args, i_arg, Nmax, N, nm, i1
+integer :: num_args, i_arg, Nmax, N, nm, i1, N_theta, N_phi, phi, th
 real(8) :: elem_ka, crs(4), Csca_ave, k, Csca_ic_ave
 complex(8), dimension(:,:,:), allocatable :: multiT
 complex(8), dimension(:,:,:), allocatable :: Taa, Tab, Tba, Tbb
 complex(8), dimension(:,:), allocatable :: T2aa, T2ab, T2ba, T2bb
 complex(8), dimension(:,:), allocatable :: Taa_c, Tab_c, Tba_c, Tbb_c
 complex(8), dimension(:,:), allocatable :: Taa_ic, Tab_ic, Tba_ic, Tbb_ic
+complex(8), dimension(:), allocatable :: a_nm, b_nm, a_nm2, b_nm2
+complex(8), dimension(:), allocatable :: a_in, b_in, a_in2, b_in2
+real(8), dimension(:,:), allocatable :: S_out, S_ave, S_out_ave
 
    ! Default arguments
    T_in = 'T'
@@ -24,6 +27,10 @@ complex(8), dimension(:,:), allocatable :: Taa_ic, Tab_ic, Tba_ic, Tbb_ic
    elem_ka = 10.0
    k = 1
    N=1
+   N_theta = 181
+   N_phi = 64
+   mueller_file = 'mueller_elem.h5'
+
    num_args = command_argument_count()
    do i_arg = 1,num_args,2
       call get_command_argument(i_arg,arg_name)
@@ -85,6 +92,7 @@ Tba_ic(:,:) = dcmplx(0.0,0.0)
 Tbb_ic(:,:) = dcmplx(0.0,0.0)
 
 
+
 Csca_ave = 0.0
 do i1 = 1,N
 
@@ -117,7 +125,17 @@ call T_write2file(Taa_c, Tab_c, Tba_c, Tbb_c, T_coh)
 
 print*, 'Csca ave =', Csca_ave
 
+
+allocate(a_in(nm), b_in(nm),a_in2(nm),b_in2(nm))
+allocate(a_nm(nm), b_nm(nm),a_nm2(nm),b_nm2(nm))
+call planewave2(Nmax, k, a_in, b_in, a_in2, b_in2)
+
+allocate(S_out_ave(N_theta*N_phi,18))
+
 Csca_ic_ave = 0.0
+S_out_ave(:,:) = 0.0
+
+
 do i1 = 1,N
 
    Taa_ic = Taa(:,:,i1)-Taa_c
@@ -128,7 +146,35 @@ do i1 = 1,N
    call tr_T(Taa_ic, Tbb_ic, Tab_ic, Tba_ic, k, crs)
 
    Csca_ic_ave = Csca_ic_ave + crs(2)/N
+
+   ! solve scattering 
+   a_nm = matmul(Taa_ic,a_in) + matmul(Tab_ic,b_in)
+   b_nm = matmul(Tbb_ic,b_in) + matmul(Tba_ic,a_in)
+
+   a_nm2 = matmul(Taa_ic,a_in2) + matmul(Tab_ic,b_in2)
+   b_nm2 = matmul(Tbb_ic,b_in2) + matmul(Tba_ic,a_in2)
+
+   call mueller_matrix_coeff(a_nm, b_nm, a_nm2, b_nm2, dcmplx(k,0.0), N_theta, N_phi, Nmax, S_out)
+
+   S_out_ave = S_out_ave + S_out/N
+   deallocate(S_out)
 end do
+
+
+
+allocate(S_ave(N_theta,17))
+
+S_ave(:,:) = 0.0
+do th = 1,N_theta
+   do phi = 1,N_phi
+      S_ave(th,1:17) = S_ave(th,1:17) + S_out_ave(th+N_theta*(phi-1),2:18)/N_phi;           
+   end do
+   
+end do
+
+S_ave(:,1) = S_ave(:,1)*180/pi;
+
+call real_write2file(S_ave,mueller_file)
 
 print*, 'Csca_ic ave =', Csca_ic_ave
 print*, 'kappa_s_ic =', Csca_ic_ave / (4.0/3.0*pi*((elem_ka/k)**3.0))
