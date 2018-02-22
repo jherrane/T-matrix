@@ -10,7 +10,7 @@ CHARACTER(LEN=38) :: arg_name, arg
 CHARACTER(LEN=38) :: T_in, T_multi, T_coh, x1, Tname, mueller_file
 
 integer :: num_args, i_arg, Nmax, N, nm, i1, N_theta, N_phi, phi, th
-real(8) :: elem_ka, crs(4), Csca_ave, k, Csca_ic_ave
+real(8) :: elem_ka, crs(4), Csca_ave, k, Csca_ic_ave, Cabs_ave, albedo, Cabs_ic_ave, Cext_ic_ave 
 complex(8), dimension(:,:,:), allocatable :: multiT
 complex(8), dimension(:,:,:), allocatable :: Taa, Tab, Tba, Tbb
 complex(8), dimension(:,:), allocatable :: T2aa, T2ab, T2ba, T2bb
@@ -18,7 +18,9 @@ complex(8), dimension(:,:), allocatable :: Taa_c, Tab_c, Tba_c, Tbb_c
 complex(8), dimension(:,:), allocatable :: Taa_ic, Tab_ic, Tba_ic, Tbb_ic
 complex(8), dimension(:), allocatable :: a_nm, b_nm, a_nm2, b_nm2
 complex(8), dimension(:), allocatable :: a_in, b_in, a_in2, b_in2
-real(8), dimension(:,:), allocatable :: S_out, S_ave, S_out_ave
+real(8), dimension(:,:), allocatable :: S_out, S_ave, S_out_ave, Cexts
+real(8), dimension(:), allocatable :: Cabs_vec
+real(8) :: Csca, Cabs_ic
 
    ! Default arguments
    T_in = 'T'
@@ -80,6 +82,8 @@ allocate(Tab_ic(nm,nm))
 allocate(Tba_ic(nm,nm))
 allocate(Tbb_ic(nm,nm))
 
+allocate(Cabs_vec(N))
+allocate(Cexts(2,N))
 
 Taa_c(:,:) = dcmplx(0.0,0.0)
 Tab_c(:,:) = dcmplx(0.0,0.0)
@@ -107,6 +111,8 @@ do i1 = 1,N
    Tba(:,:,i1) = T2ba
    Tbb(:,:,i1) = T2bb
 
+   print*, 'Tmat size', sqrt(dble(size(Taa(:,1,i1)))+1)-1
+
    !Coherent T-matrix
    Taa_c = Taa_c + Taa(:,:,i1)/N
    Tab_c = Tab_c + Tab(:,:,i1)/N
@@ -116,22 +122,27 @@ do i1 = 1,N
    call tr_T(T2aa, T2bb, T2ab, T2ba, k, crs)
 
    Csca_ave = Csca_ave + crs(2)/N
+   Cabs_ave = Cabs_ave + crs(3)/N
+
+   Cabs_vec(i1) = crs(3)
 
    deallocate(T2aa, T2ab, T2ba, T2bb)
 end do
 
-call T_write2file2(Taa, Tab, Tba, Tbb, T_multi)
-call T_write2file(Taa_c, Tab_c, Tba_c, Tbb_c, T_coh)
+call tr_T(Taa_c, Tbb_c, Tab_c, Tba_c, k, crs)
+
+print*, 'Cext_c ave =', crs(1)
+print*, 'Csca_c ave =', crs(2)
 
 print*, 'Csca ave =', Csca_ave
-
+print*, 'Cabs ave =', Cabs_ave
 
 allocate(a_in(nm), b_in(nm),a_in2(nm),b_in2(nm))
 allocate(a_nm(nm), b_nm(nm),a_nm2(nm),b_nm2(nm))
 call planewave2(Nmax, k, a_in, b_in, a_in2, b_in2)
 
 allocate(S_out_ave(N_theta*N_phi,18))
-
+Cext_ic_ave = 0.0
 Csca_ic_ave = 0.0
 S_out_ave(:,:) = 0.0
 
@@ -145,7 +156,14 @@ do i1 = 1,N
 
    call tr_T(Taa_ic, Tbb_ic, Tab_ic, Tba_ic, k, crs)
 
+   Cext_ic_ave = Cext_ic_ave + crs(1)/N
    Csca_ic_ave = Csca_ic_ave + crs(2)/N
+
+   Cexts(1,i1) = crs(2) + Cabs_vec(i1)
+   Cexts(2,i1) = crs(2)/(crs(2) + Cabs_vec(i1))
+
+
+   print*, 'Cext=', Cexts(1,i1), 'al', Cexts(2,i1)
 
    ! solve scattering 
    a_nm = matmul(Taa_ic,a_in) + matmul(Tab_ic,b_in)
@@ -157,10 +175,17 @@ do i1 = 1,N
    call mueller_matrix_coeff(a_nm, b_nm, a_nm2, b_nm2, dcmplx(k,0.0), N_theta, N_phi, Nmax, S_out)
 
    S_out_ave = S_out_ave + S_out/N
+
+
+   Taa(:,:,i1) = Taa(:,:,i1)-Taa_c
+   Tab(:,:,i1) = Tab(:,:,i1)-Tab_c
+   Tba(:,:,i1) = Tba(:,:,i1)-Tba_c
+   Tbb(:,:,i1) = Tbb(:,:,i1)-Tbb_c
+
    deallocate(S_out)
 end do
 
-
+call T_write2file2(Taa, Tab, Tba, Tbb, Cexts, T_multi)
 
 allocate(S_ave(N_theta,17))
 
@@ -172,12 +197,29 @@ do th = 1,N_theta
    
 end do
 
+albedo = Csca_ave/(Csca_ave+Cabs_ave)
+Cabs_ic_ave = Csca_ic_ave * (1.0/albedo - 1)
+
+
 S_ave(:,1) = S_ave(:,1)*180/pi;
 
 call real_write2file(S_ave,mueller_file)
 
+print*, 'Csca ave =', Csca_ave
+print*, 'Cabs ave =', Cabs_ave
+print*, 'Albedo  =', Csca_ic_ave/(Csca_ic_ave+Cabs_ave)
+print*, 'Albedo (old) =', albedo
 print*, 'Csca_ic ave =', Csca_ic_ave
+print*, 'Cabs_ic ave =', Cabs_ic_ave
+print*, 'Cext_ic ave =', Cext_ic_ave
+
 print*, 'kappa_s_ic =', Csca_ic_ave / (4.0/3.0*pi*((elem_ka/k)**3.0))
-print*, 'mfp_ic =', (4.0/3.0*pi*((elem_ka/k)**3.0)) / Csca_ic_ave
+
+print*, 'mfp_ic =', (4.0/3.0*pi*((elem_ka/k)**3.0)) / (Csca_ic_ave + Cabs_ave)
+
+print*, 'mfp_ic(old) =', (4.0/3.0*pi*((elem_ka/k)**3.0)) / (Csca_ic_ave + Cabs_ic_ave)
+
+
+
 
 end program main_multiT

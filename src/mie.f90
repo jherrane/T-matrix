@@ -662,6 +662,7 @@ do mu = 1, nm
 
       T2 = T2 + (abs(Taa(mu, nu))**2 + abs(Tbb(mu, nu))**2 + &
            abs(Tab(mu, nu))**2 + abs(Tba(mu, nu))**2)
+
    
    end do
 end do

@@ -690,7 +690,7 @@ end subroutine read_T
 
 
 
-subroutine T_write2file2(Taa, Tab, Tba, Tbb, fname)
+subroutine T_write2file2_old(Taa, Tab, Tba, Tbb, fname)
 double complex, intent(in) :: Taa(:,:,:)
 double complex, intent(in) :: Tab(:,:,:)
 double complex, intent(in) :: Tba(:,:,:)
@@ -839,7 +839,206 @@ CALL h5fclose_f(file_id, error)
 !
 CALL h5close_f(error)
 
+end subroutine T_write2file2_old
+
+
+
+
+
+
+
+
+
+subroutine T_write2file2(Taa, Tab, Tba, Tbb, Cexts,fname)
+double complex, intent(in) :: Taa(:,:,:)
+double complex, intent(in) :: Tab(:,:,:)
+double complex, intent(in) :: Tba(:,:,:)
+double complex, intent(in) :: Tbb(:,:,:)
+double precision, intent(in) :: Cexts(:,:)
+
+CHARACTER(LEN=38), intent(in) :: fname
+CHARACTER(LEN=38) :: filename
+
+CHARACTER(LEN=5), PARAMETER :: dsetname1 = "Taa_r" ! Dataset name
+CHARACTER(LEN=5), PARAMETER :: dsetname2 = "Taa_i" ! Dataset name
+
+CHARACTER(LEN=5), PARAMETER :: dsetname3 = "Tab_r" ! Dataset name
+CHARACTER(LEN=5), PARAMETER :: dsetname4 = "Tab_i" ! Dataset name
+
+CHARACTER(LEN=5), PARAMETER :: dsetname5 = "Tba_r" ! Dataset name
+CHARACTER(LEN=5), PARAMETER :: dsetname6 = "Tba_i" ! Dataset name
+
+CHARACTER(LEN=5), PARAMETER :: dsetname7 = "Tbb_r" ! Dataset name
+CHARACTER(LEN=5), PARAMETER :: dsetname8 = "Tbb_i" ! Dataset name
+
+CHARACTER(LEN=5), PARAMETER :: dsetname9 = "Cexts" ! Dataset name
+
+INTEGER(HID_T) :: file_id       ! File identifier
+INTEGER(HID_T) :: dset_id1       ! Dataset identifier
+INTEGER(HID_T) :: dset_id2       ! Dataset identifier
+INTEGER(HID_T) :: dset_id3       ! Dataset identifier
+INTEGER(HID_T) :: dset_id4       ! Dataset identifier
+INTEGER(HID_T) :: dset_id5       ! Dataset identifier
+INTEGER(HID_T) :: dset_id6       ! Dataset identifier
+INTEGER(HID_T) :: dset_id7       ! Dataset identifier
+INTEGER(HID_T) :: dset_id8       ! Dataset identifier
+INTEGER(HID_T) :: dset_id9       ! Dataset identifier
+
+
+INTEGER(HID_T) :: dspace_id     ! Dataspace identifier
+
+
+INTEGER(HSIZE_T), DIMENSION(3) :: dims  ! Dataset dimensions
+INTEGER(HSIZE_T), DIMENSION(2) :: dims2  ! Dataset dimensions
+
+INTEGER     ::    rank = 3                       ! Dataset rank
+
+INTEGER     ::   error ! Error flag
+!INTEGER     :: i, j
+
+filename = fname
+dims = (/size(Taa,1),size(Taa,2),size(Taa,3)/)
+dims2 = (/size(Cexts,dim=1),size(Cexts,dim=2)/)
+
+CALL h5open_f(error)
+
+!
+! Create a new file using default properties.
+!
+CALL h5fcreate_f(filename, H5F_ACC_TRUNC_F, file_id, error)
+
+!
+! Create the dataspace.
+!
+CALL h5screate_simple_f(rank, dims, dspace_id, error)
+
+!
+! Create and write dataset using default properties.
+!
+CALL h5dcreate_f(file_id, dsetname1, H5T_NATIVE_DOUBLE, dspace_id, &
+                       dset_id1, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
+                       H5P_DEFAULT_F)
+
+CALL h5dwrite_f(dset_id1, H5T_NATIVE_DOUBLE, real(Taa), dims, error)
+
+CALL h5dclose_f(dset_id1, error)
+!____
+
+CALL h5dcreate_f(file_id, dsetname2, H5T_NATIVE_DOUBLE, dspace_id, &
+                       dset_id2, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
+                       H5P_DEFAULT_F)
+
+CALL h5dwrite_f(dset_id2, H5T_NATIVE_DOUBLE, imag(Taa), dims, error)
+
+CALL h5dclose_f(dset_id2, error)
+
+!******************************************************************
+
+CALL h5dcreate_f(file_id, dsetname3, H5T_NATIVE_DOUBLE, dspace_id, &
+                       dset_id3, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
+                       H5P_DEFAULT_F)
+
+CALL h5dwrite_f(dset_id3, H5T_NATIVE_DOUBLE, real(Tab), dims, error)
+
+CALL h5dclose_f(dset_id3, error)
+!____
+
+CALL h5dcreate_f(file_id, dsetname4, H5T_NATIVE_DOUBLE, dspace_id, &
+                       dset_id4, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
+                       H5P_DEFAULT_F)
+
+CALL h5dwrite_f(dset_id4, H5T_NATIVE_DOUBLE, imag(Tab), dims, error)
+
+CALL h5dclose_f(dset_id4, error)
+
+!******************************************************************
+
+CALL h5dcreate_f(file_id, dsetname5, H5T_NATIVE_DOUBLE, dspace_id, &
+                       dset_id5, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
+                       H5P_DEFAULT_F)
+
+CALL h5dwrite_f(dset_id5, H5T_NATIVE_DOUBLE, real(Tba), dims, error)
+
+CALL h5dclose_f(dset_id5, error)
+!____
+
+CALL h5dcreate_f(file_id, dsetname6, H5T_NATIVE_DOUBLE, dspace_id, &
+                       dset_id6, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
+                       H5P_DEFAULT_F)
+
+CALL h5dwrite_f(dset_id6, H5T_NATIVE_DOUBLE, imag(Tba), dims, error)
+
+CALL h5dclose_f(dset_id6, error)
+
+!******************************************************************
+
+
+CALL h5dcreate_f(file_id, dsetname7, H5T_NATIVE_DOUBLE, dspace_id, &
+                       dset_id7, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
+                       H5P_DEFAULT_F)
+
+CALL h5dwrite_f(dset_id7, H5T_NATIVE_DOUBLE, real(Tbb), dims, error)
+
+CALL h5dclose_f(dset_id7, error)
+!____
+
+CALL h5dcreate_f(file_id, dsetname8, H5T_NATIVE_DOUBLE, dspace_id, &
+                       dset_id8, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
+                       H5P_DEFAULT_F)
+
+CALL h5dwrite_f(dset_id8, H5T_NATIVE_DOUBLE, imag(Tbb), dims, error)
+
+CALL h5dclose_f(dset_id8, error)
+
+
+
+
+!******************************************************************
+! Terminate access to the data space.
+!
+CALL h5sclose_f(dspace_id, error)
+
+
+
+CALL h5screate_simple_f(2, dims2, dspace_id, error)
+
+!____
+
+CALL h5dcreate_f(file_id, dsetname9, H5T_NATIVE_DOUBLE, dspace_id, &
+                       dset_id9, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
+                       H5P_DEFAULT_F)
+
+CALL h5dwrite_f(dset_id9, H5T_NATIVE_DOUBLE, Cexts, dims2, error)
+
+CALL h5dclose_f(dset_id9, error)
+
+!******************************************************************
+! Terminate access to the data space.
+!
+CALL h5sclose_f(dspace_id, error)
+
+
+
+
+
+!
+! Close the file.
+!
+CALL h5fclose_f(file_id, error)
+
+!
+! Close FORTRAN interface.
+!
+CALL h5close_f(error)
+
 end subroutine T_write2file2
+
+
+
+
+
+
+
 
 
 

@@ -25,13 +25,6 @@ OBJECTS2 = common.o io.o sfunctions.o translations.o mie.o main_multiT.o
 #LIBS = -lm -L/usr/local/lib -lfftw3 -L/usr/lib -llapack -lhdf5_fortran -lhdf5 -lblas
 LIBS = -lm -L/usr/lib -llapack -L/usr/local/hdf5/lib -lhdf5_fortran -lhdf5 -L/usr/local/lib -lfftw3
 
-# Libs for csc taito gcc
-#LIBS = -L${FFTW_ROOT}/lib/ -lfftw3_mpi -lfftw3 -L${H5ROOT}/lib/ -lhdf5_fortran -lhdf5 -Wl,--start-group $(MKLROOT)/lib/intel64/libmkl_gf_lp64.a $(MKLROOT)/lib/intel64/libmkl_core.a $(MKLROOT)/lib/intel64/libmkl_sequential.a -Wl,--end-group -lpthread -lm
-
-#intel
-#LIBS = -L${FFTW_ROOT}/lib/ -lfftw3_mpi -lfftw3 -L${H5ROOT}/lib/ -lhdf5_fortran -lhdf5 -Wl,--start-group $(MKLROOT)/lib/intel64/libmkl_intel_lp64.a $(MKLROOT)/lib/intel64/libmkl_core.a $(MKLROOT)/lib/intel64/libmkl_sequential.a -Wl,--end-group -lpthread -lm
-
-
 
 NAME = T_matrix
 NAME2 = multi_T
