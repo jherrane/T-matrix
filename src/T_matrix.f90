@@ -2,7 +2,7 @@ module T_matrix
 use common
 use transformation_matrices
 use gmres_module 
-
+use field
 implicit none 
 
 contains
@@ -10,7 +10,7 @@ contains
 subroutine compute_T_matrix(matrices, mesh, k, Nmax, Taa, Tab, Tba, Tbb)
 type (mesh_struct) :: mesh
 type (data) :: matrices
-real(dp) :: k
+real(dp) :: k, Cabs
 integer :: Nmax
 
 complex(dp) :: mat(3*mesh%N_tet,2*((Nmax+1)**2-1))
@@ -18,6 +18,7 @@ integer :: nm, T1, T2, rate
 complex(dp) :: T_mat(2*((Nmax+1)**2-1), 2*((Nmax+1)**2-1))
 complex(dp), dimension((Nmax+1)**2-1,(Nmax+1)**2-1) :: Taa, Tab, Tba, Tbb
 complex(dp) :: sc
+
 
 print*, 'Compute transformations...'
 call system_clock(T1,rate)
@@ -30,6 +31,10 @@ do nm = 1,size(mat,2)
 
    matrices%rhs = mat(:,nm)
    call gmres(matrices,mesh)
+
+   Cabs = compute_Cabs(matrices, mesh)
+   print*, Cabs
+
    T_mat(:,nm) = matmul(transpose(conjg(mat)),matrices%x)
 
    print*, nm, '/',size(mat,2)

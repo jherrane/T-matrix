@@ -20,7 +20,7 @@ complex(8), dimension(:), allocatable :: a_nm, b_nm, a_nm2, b_nm2
 complex(8), dimension(:), allocatable :: a_in, b_in, a_in2, b_in2
 real(8), dimension(:,:), allocatable :: S_out, S_ave, S_out_ave, Cexts
 real(8), dimension(:), allocatable :: Cabs_vec
-real(8) :: Csca, Cabs_ic
+real(8) :: Csca, Cabs_ic, Cextu, Cscau, Cabsu
 
    ! Default arguments
    T_in = 'T'
@@ -85,6 +85,9 @@ allocate(Tbb_ic(nm,nm))
 allocate(Cabs_vec(N))
 allocate(Cexts(2,N))
 
+allocate(a_nm(nm), b_nm(nm))
+allocate(a_in(nm), b_in(nm))
+
 Taa_c(:,:) = dcmplx(0.0,0.0)
 Tab_c(:,:) = dcmplx(0.0,0.0)
 Tba_c(:,:) = dcmplx(0.0,0.0)
@@ -95,6 +98,7 @@ Tab_ic(:,:) = dcmplx(0.0,0.0)
 Tba_ic(:,:) = dcmplx(0.0,0.0)
 Tbb_ic(:,:) = dcmplx(0.0,0.0)
 
+call planewave(Nmax, k, a_in, b_in)
 
 
 Csca_ave = 0.0
@@ -111,7 +115,7 @@ do i1 = 1,N
    Tba(:,:,i1) = T2ba
    Tbb(:,:,i1) = T2bb
 
-   print*, 'Tmat size', sqrt(dble(size(Taa(:,1,i1)))+1)-1
+   !print*, 'Tmat size', sqrt(dble(size(Taa(:,1,i1)))+1)-1
 
    !Coherent T-matrix
    Taa_c = Taa_c + Taa(:,:,i1)/N
@@ -121,21 +125,36 @@ do i1 = 1,N
 
    call tr_T(T2aa, T2bb, T2ab, T2ba, k, crs)
 
+   !print*, size(a_nm), size(a_in), size(T2aa,1)
+   a_nm = matmul(T2aa,a_in) + matmul(T2ab,b_in)
+   b_nm = matmul(T2bb,b_in) + matmul(T2ba,a_in)
+
+   call cross_sections(a_nm, b_nm, a_in, b_in, dcmplx(k,0.0), Nmax, Cextu, Cscau, Cabsu)
+
+   print*, 'Cabs', crs(3), 'Csca', crs(2)
+
    Csca_ave = Csca_ave + crs(2)/N
    Cabs_ave = Cabs_ave + crs(3)/N
 
-   Cabs_vec(i1) = crs(3)
+   if(crs(3)<0) print*, 'negative absorption'
+   Cabs_vec(i1) = abs(crs(3))
+
+   
 
    deallocate(T2aa, T2ab, T2ba, T2bb)
 end do
 
+
+
 call tr_T(Taa_c, Tbb_c, Tab_c, Tba_c, k, crs)
 
-print*, 'Cext_c ave =', crs(1)
-print*, 'Csca_c ave =', crs(2)
+!print*, 'Cext_c ave =', crs(1)
+!print*, 'Csca_c ave =', crs(2)
 
 print*, 'Csca ave =', Csca_ave
 print*, 'Cabs ave =', Cabs_ave
+
+deallocate(a_in,b_in,a_nm,b_nm)
 
 allocate(a_in(nm), b_in(nm),a_in2(nm),b_in2(nm))
 allocate(a_nm(nm), b_nm(nm),a_nm2(nm),b_nm2(nm))

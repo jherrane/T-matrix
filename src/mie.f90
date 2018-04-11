@@ -657,7 +657,7 @@ T2 = dcmplx(0.0,0.0)
 do mu = 1, nm
 
    T1 = T1 + (real(Taa(mu, mu)) + real(Tbb(mu, mu)) + real(Tab(mu, mu)) + real(Tba(mu, mu))) 
-
+   !T1 = T1 + (real(Taa(mu, mu)) + real(Tbb(mu, mu)))
    do nu = 1,nm
 
       T2 = T2 + (abs(Taa(mu, nu))**2 + abs(Tbb(mu, nu))**2 + &
@@ -669,13 +669,13 @@ end do
 
 crs(1) = -2*pi*T1/k**2
 crs(2) = 2*pi*T2/k**2
-crs(3) = (-2*pi*T1/k**2-2*pi*T2/k**2)
+crs(3) = abs(-2*pi*T1/k**2-2*pi*T2/k**2)
 crs(4) = T1 + T2
 
-print*,'Ave. Extinction cross section:', -2*pi*T1/k**2 
-print*,'Ave. Scattering cross section:', 2*pi*T2/k**2
-print*,'Ave. absorption cross section:', -2*pi*T1/k**2 -2*pi*T2/k**2
-print*,'Tr_(real(T) + T adj(T)):', T1 + T2
+!print*,'Ave. Extinction cross section:', -2*pi*T1/k**2 
+!print*,'Ave. Scattering cross section:', 2*pi*T2/k**2
+!print*,'Ave. absorption cross section:', -2*pi*T1/k**2 -2*pi*T2/k**2
+!print*,'Tr_(real(T) + T adj(T)):', T1 + T2
 
 
 end subroutine tr_T

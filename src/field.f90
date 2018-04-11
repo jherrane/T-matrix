@@ -9,6 +9,40 @@ implicit none
 contains 
 
 
+
+function compute_Cabs(matrices, mesh) result(Cabs)
+type (data), intent(in) :: matrices  
+type (mesh_struct), intent(in) :: mesh
+
+integer :: ele, nodes(4)
+complex(8) :: J(3), J0(3)
+real(8) :: vol_B, Cabs, B_coord(3,4)
+
+Cabs = 0.0d0
+
+do ele = 1, mesh%N_tet
+
+   nodes = mesh%etopol(:,ele)
+   B_coord = mesh%coord(:,nodes)   
+   vol_B = tetra_volume(B_coord)
+
+   J0(1) = -dcmplx(0.0,1.0)*1.0/376.7*mesh%k *(mesh%param(ele)-1.0) / sqrt(vol_B)
+   J0(2) = -dcmplx(0.0,1.0)*1.0/376.7*mesh%k *(mesh%param(ele)-1.0) / sqrt(vol_B)
+   J0(3) = -dcmplx(0.0,1.0)*1.0/376.7*mesh%k *(mesh%param(ele)-1.0) / sqrt(vol_B)
+
+   J(1) = matrices%x(3*(ele-1)+1)
+   J(2) = matrices%x(3*(ele-1)+2) 
+   J(3) = matrices%x(3*(ele-1)+3) 
+   
+   Cabs = Cabs + mesh%k*imag(mesh%param(ele)) &
+        * dot_product(J,J) / dot_product(J0,J0) 
+   
+end do
+
+end function compute_Cabs
+
+
+
 function compute_far_field_const(matrices, mesh, r) result(E)
 
 type (data), intent(in) :: matrices  

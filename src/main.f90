@@ -35,8 +35,8 @@ complex(8), dimension(:), allocatable :: rotD
 integer, dimension(:,:), allocatable :: indD
 real(dp), dimension(:,:), allocatable :: SS
 
-CHARACTER(LEN=28) :: meshname, fname, mueller_out, J_out, arg_name, arg
-CHARACTER(LEN=28) :: mueller_out2
+CHARACTER(LEN=38) :: meshname, fname, mueller_out, J_out, arg_name, arg
+CHARACTER(LEN=38) :: mueller_out2
 CHARACTER(LEN=38) :: tname
 integer :: cont, tet, num_args, i_arg, Nmax, n, Tmat
 
@@ -75,7 +75,7 @@ call system_clock(wt1,wrate)
    theta = 0.0
    ave = 0
    halton_init = 0
-   tol = 1e-5 
+   tol = 1e-3 
    maxit = 50  
    restart = 4
    projector = 'pfft'
