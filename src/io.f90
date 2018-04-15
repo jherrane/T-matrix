@@ -689,6 +689,144 @@ end subroutine read_T
 
 
 
+subroutine read_T2(file, Taa, Tab, Tba, Tbb,Cexts)
+!CHARACTER(LEN=28), intent(in) :: fname
+
+CHARACTER(LEN=38) :: file  ! File name
+CHARACTER(LEN=16), PARAMETER :: dataset1 = "Taa_r"     ! Dataset name
+CHARACTER(LEN=16), PARAMETER :: dataset2 = "Taa_i"     ! Dataset name
+CHARACTER(LEN=16), PARAMETER :: dataset3 = "Tab_r"     ! Dataset name
+CHARACTER(LEN=16), PARAMETER :: dataset4 = "Tab_i"     ! Dataset name
+CHARACTER(LEN=16), PARAMETER :: dataset5 = "Tba_r"     ! Dataset name
+CHARACTER(LEN=16), PARAMETER :: dataset6 = "Tba_i"     ! Dataset name
+CHARACTER(LEN=16), PARAMETER :: dataset7 = "Tbb_r"     ! Dataset name
+CHARACTER(LEN=16), PARAMETER :: dataset8 = "Tbb_i"     ! Dataset name
+CHARACTER(LEN=16), PARAMETER :: dataset9 = "Cexts"     ! Dataset name
+
+integer(HID_T) :: file_id 
+integer(HID_T) :: dataset1_id, dataset2_id, dataset3_id, dataset4_id
+integer(HID_T) :: dataset5_id, dataset6_id, dataset7_id, dataset8_id
+integer(HID_T) :: dataset9_id
+
+integer(HID_T) :: dataspace_id
+
+integer(HSIZE_T), dimension(3) :: dims_out, dims
+integer(HSIZE_T), dimension(2) :: dims_out2, dims2
+
+integer :: error
+
+double precision, dimension(:,:,:), allocatable :: Taa_r, Taa_i
+double precision, dimension(:,:,:), allocatable :: Tab_r, Tab_i
+double precision, dimension(:,:,:), allocatable :: Tba_r, Tba_i
+double precision, dimension(:,:,:), allocatable :: Tbb_r, Tbb_i
+double complex, dimension(:,:,:), allocatable :: Taa, Tab, Tba, Tbb 
+double precision, allocatable, intent(out) :: Cexts(:,:)
+
+call h5open_f(error) ! initialize interface
+call h5fopen_f(file, H5F_ACC_RDWR_F, file_id, error) ! open file
+
+!__________ _____________________________
+call h5dopen_f(file_id, dataset1, dataset1_id, error) ! open dataset
+call h5dget_space_f(dataset1_id, dataspace_id, error) 
+call H5sget_simple_extent_dims_f(dataspace_id, dims_out, dims, error)
+allocate(Taa_r(dims(1), dims(2), dims(3)))
+call h5dread_f(dataset1_id, H5T_NATIVE_DOUBLE, Taa_r,dims, error)
+call h5dclose_f(dataset1_id, error) ! close dataset
+!__________________________________________
+call h5dopen_f(file_id, dataset2, dataset2_id, error) ! open dataset
+call h5dget_space_f(dataset2_id, dataspace_id, error) 
+call H5sget_simple_extent_dims_f(dataspace_id, dims_out, dims, error)
+allocate(Taa_i(dims(1), dims(2), dims(3)))
+call h5dread_f(dataset2_id, H5T_NATIVE_DOUBLE, Taa_i,dims, error)
+call h5dclose_f(dataset2_id, error) ! close dataset
+!__________________________________________
+allocate(Taa(size(Taa_r,1),size(Taa_r,2),size(Taa_r,3)))
+Taa = dcmplx(Taa_r, Taa_i)
+
+
+!__________ _____________________________
+call h5dopen_f(file_id, dataset3, dataset3_id, error) ! open dataset
+call h5dget_space_f(dataset3_id, dataspace_id, error) 
+call H5sget_simple_extent_dims_f(dataspace_id, dims_out, dims, error)
+allocate(Tab_r(dims(1), dims(2), dims(3)))
+call h5dread_f(dataset3_id, H5T_NATIVE_DOUBLE, Tab_r,dims, error)
+call h5dclose_f(dataset3_id, error) ! close dataset
+!__________________________________________
+call h5dopen_f(file_id, dataset4, dataset4_id, error) ! open dataset
+call h5dget_space_f(dataset4_id, dataspace_id, error) 
+call H5sget_simple_extent_dims_f(dataspace_id, dims_out, dims, error)
+allocate(Tab_i(dims(1), dims(2), dims(3)))
+call h5dread_f(dataset4_id, H5T_NATIVE_DOUBLE, Tab_i,dims, error)
+call h5dclose_f(dataset4_id, error) ! close dataset
+!__________________________________________
+allocate(Tab(size(Tab_r,1),size(Tab_r,2),size(Tab_r,3)))
+Tab = dcmplx(Tab_r, Tab_i)
+
+
+!__________ _____________________________
+call h5dopen_f(file_id, dataset5, dataset5_id, error) ! open dataset
+call h5dget_space_f(dataset5_id, dataspace_id, error) 
+call H5sget_simple_extent_dims_f(dataspace_id, dims_out, dims, error)
+allocate(Tba_r(dims(1), dims(2), dims(3)))
+call h5dread_f(dataset5_id, H5T_NATIVE_DOUBLE, Tba_r,dims, error)
+call h5dclose_f(dataset5_id, error) ! close dataset
+!__________________________________________
+call h5dopen_f(file_id, dataset6, dataset6_id, error) ! open dataset
+call h5dget_space_f(dataset6_id, dataspace_id, error) 
+call H5sget_simple_extent_dims_f(dataspace_id, dims_out, dims, error)
+allocate(Tba_i(dims(1), dims(2), dims(3)))
+call h5dread_f(dataset6_id, H5T_NATIVE_DOUBLE, Tba_i,dims, error)
+call h5dclose_f(dataset6_id, error) ! close dataset
+!__________________________________________
+allocate(Tba(size(Tba_r,1),size(Tba_r,2),size(Tba_r,3)))
+Tba = dcmplx(Tba_r, Tba_i)
+
+
+
+
+!__________ _____________________________
+call h5dopen_f(file_id, dataset7, dataset7_id, error) ! open dataset
+call h5dget_space_f(dataset7_id, dataspace_id, error) 
+call H5sget_simple_extent_dims_f(dataspace_id, dims_out, dims, error)
+allocate(Tbb_r(dims(1), dims(2), dims(3)))
+call h5dread_f(dataset7_id, H5T_NATIVE_DOUBLE, Tbb_r,dims, error)
+call h5dclose_f(dataset7_id, error) ! close dataset
+!__________________________________________
+call h5dopen_f(file_id, dataset8, dataset8_id, error) ! open dataset
+call h5dget_space_f(dataset8_id, dataspace_id, error) 
+call H5sget_simple_extent_dims_f(dataspace_id, dims_out, dims, error)
+allocate(Tbb_i(dims(1), dims(2), dims(3)))
+call h5dread_f(dataset8_id, H5T_NATIVE_DOUBLE, Tbb_i,dims, error)
+call h5dclose_f(dataset8_id, error) ! close dataset
+!__________________________________________
+allocate(Tbb(size(Tbb_r,1),size(Tbb_r,2),size(Tbb_r,3)))
+Tbb = dcmplx(Tbb_r, Tbb_i)
+
+
+
+!__________________________________________
+call h5dopen_f(file_id, dataset9, dataset9_id, error) ! open dataset
+call h5dget_space_f(dataset9_id, dataspace_id, error) 
+call H5sget_simple_extent_dims_f(dataspace_id, dims_out2, dims2, error)
+allocate(Cexts(dims2(1),dims2(2)))
+call h5dread_f(dataset9_id, H5T_NATIVE_DOUBLE, Cexts,dims2, error)
+call h5dclose_f(dataset9_id, error) ! close dataset
+
+
+
+
+!_______________________________________________________________
+
+call h5fclose_f(file_id, error) ! close file
+call h5close_f(error) ! close inteface
+
+
+
+
+end subroutine read_T2
+
+
+
 
 subroutine T_write2file2_old(Taa, Tab, Tba, Tbb, fname)
 double complex, intent(in) :: Taa(:,:,:)

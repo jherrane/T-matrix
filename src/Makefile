@@ -35,7 +35,9 @@ main.o: main.f90
 
 clean:
 	 rm -f ${NAME}
-	 rm -f ${OBJECTS}
+	rm -f ${NAME2}
+	rm -f ${OBJECTS}
+	rm -f ${OBJECTS2}
 	 rm -f *.mod
 	 rm -f *~
 

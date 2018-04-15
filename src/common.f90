@@ -3,7 +3,7 @@ module common
 implicit none
 
 integer, parameter :: dp = selected_real_kind(15, 307)
-double precision, parameter :: pi = 3.141592653589793
+double precision, parameter :: pi = 4.0_dp*atan(1.0_dp)
 double precision, parameter :: epsilon = 8.854187817*(10**(-12.0))
 double precision, parameter :: mu = 4.0*pi*10.0**(-7.0)
 integer, parameter :: nthreads = 24

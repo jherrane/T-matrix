@@ -7,12 +7,13 @@ implicit none
 
 
 CHARACTER(LEN=38) :: arg_name, arg
-CHARACTER(LEN=38) :: T_in, T_multi, T_coh, x1, Tname, mueller_file
+CHARACTER(LEN=38) :: T_in, T_multi, T_coh, x1, Tname, mueller_file, T_multi_tot
 
 integer :: num_args, i_arg, Nmax, N, nm, i1, N_theta, N_phi, phi, th
 real(8) :: elem_ka, crs(4), Csca_ave, k, Csca_ic_ave, Cabs_ave, albedo, Cabs_ic_ave, Cext_ic_ave 
-complex(8), dimension(:,:,:), allocatable :: multiT
+complex(8), dimension(:,:,:), allocatable :: multiT, multi_T_tot
 complex(8), dimension(:,:,:), allocatable :: Taa, Tab, Tba, Tbb
+complex(8), dimension(:,:,:), allocatable :: Taa2, Tab2, Tba2, Tbb2
 complex(8), dimension(:,:), allocatable :: T2aa, T2ab, T2ba, T2bb
 complex(8), dimension(:,:), allocatable :: Taa_c, Tab_c, Tba_c, Tbb_c
 complex(8), dimension(:,:), allocatable :: Taa_ic, Tab_ic, Tba_ic, Tbb_ic
@@ -24,7 +25,8 @@ real(8) :: Csca, Cabs_ic, Cextu, Cscau, Cabsu
 
    ! Default arguments
    T_in = 'T'
-   T_multi = 'T_multi.h5'
+   T_multi = 'T_multi_ic.h5'
+   T_multi_tot = 'T_multi_tot.h5'
    T_coh = 'T_coh.h5'
    elem_ka = 10.0
    k = 1
@@ -42,9 +44,13 @@ real(8) :: Csca, Cabs_ic, Cextu, Cscau, Cabsu
       case('-T_in')
          call get_command_argument(i_arg+1,arg)
           T_in = arg        
+      case('-T_multi_ic')
+         call get_command_argument(i_arg+1,arg)
+         T_multi = arg
       case('-T_multi')
          call get_command_argument(i_arg+1,arg)
-         T_multi = arg       
+         T_multi_tot = arg
+         
       case('-T_coh')
          call get_command_argument(i_arg+1,arg)
          T_coh = arg
@@ -71,6 +77,11 @@ allocate(Taa(nm,nm,N))
 allocate(Tab(nm,nm,N))
 allocate(Tba(nm,nm,N))
 allocate(Tbb(nm,nm,N))
+
+allocate(Taa2(nm,nm,N))
+allocate(Tab2(nm,nm,N))
+allocate(Tba2(nm,nm,N))
+allocate(Tbb2(nm,nm,N))
 
 allocate(Taa_c(nm,nm))
 allocate(Tab_c(nm,nm))
@@ -196,15 +207,24 @@ do i1 = 1,N
    S_out_ave = S_out_ave + S_out/N
 
 
+   Taa2(:,:,i1) = Taa(:,:,i1)
+   Tab2(:,:,i1) = Tab(:,:,i1)
+   Tba2(:,:,i1) = Tba(:,:,i1)
+   Tbb2(:,:,i1) = Tbb(:,:,i1)
+
+
    Taa(:,:,i1) = Taa(:,:,i1)-Taa_c
    Tab(:,:,i1) = Tab(:,:,i1)-Tab_c
    Tba(:,:,i1) = Tba(:,:,i1)-Tba_c
    Tbb(:,:,i1) = Tbb(:,:,i1)-Tbb_c
 
+
+   
    deallocate(S_out)
 end do
 
 call T_write2file2(Taa, Tab, Tba, Tbb, Cexts, T_multi)
+call T_write2file2(Taa2, Tab2, Tba2, Tbb2, Cexts, T_multi_tot)
 
 allocate(S_ave(N_theta,17))
 
@@ -226,17 +246,18 @@ call real_write2file(S_ave,mueller_file)
 
 print*, 'Csca ave =', Csca_ave
 print*, 'Cabs ave =', Cabs_ave
+print*, 'Cext ave =', Cabs_ave + Csca_ave
 print*, 'Albedo  =', Csca_ic_ave/(Csca_ic_ave+Cabs_ave)
-print*, 'Albedo (old) =', albedo
+!print*, 'Albedo (old) =', albedo
 print*, 'Csca_ic ave =', Csca_ic_ave
-print*, 'Cabs_ic ave =', Cabs_ic_ave
-print*, 'Cext_ic ave =', Cext_ic_ave
+print*, 'Cabs_ic ave =', Cabs_ave
+print*, 'Cext_ic ave =', Csca_ic_ave + Cabs_ave
 
 print*, 'kappa_s_ic =', Csca_ic_ave / (4.0/3.0*pi*((elem_ka/k)**3.0))
 
 print*, 'mfp_ic =', (4.0/3.0*pi*((elem_ka/k)**3.0)) / (Csca_ic_ave + Cabs_ave)
 
-print*, 'mfp_ic(old) =', (4.0/3.0*pi*((elem_ka/k)**3.0)) / (Csca_ic_ave + Cabs_ic_ave)
+!print*, 'mfp_ic(old) =', (4.0/3.0*pi*((elem_ka/k)**3.0)) / (Csca_ic_ave + Cabs_ic_ave)
 
 
 

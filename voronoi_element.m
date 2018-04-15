@@ -1,16 +1,16 @@
 clear
 
-addpath('iso2mesh');
+addpath('~/iso2mesh');
 
-lambda = 0.4; % wavelength: microns
-rmf = 0.15; % packing density
-m = 1.8 + i*0.000188; % refractive index
+lambda = 0.9; % wavelength: microns
+rmf = 0.25; % packing density
+m = 1.8 + i*0.188; % refractive index
 N_elems = 1 % Number of volume elements;
 mesh_file = 'mesh_'; % write mesh to file
-elem_ka = 10; % volume element sizeparameter
+elem_ka = 4; % volume element sizeparameter
 dist = -3; %power law index
-pmax = 10*lambda/2/pi/2;
-pmin = 10*lambda/2/pi/5; % 
+pmax = 5*lambda/2/pi/2;
+pmin = 5*lambda/2/pi/5; % 
 
 
 
@@ -58,7 +58,7 @@ end
 
 
 % fig = figure;
-% figure(1), plotmesh(coord',[etopol',ones(size(dp))])
+ figure(1), plotmesh(coord',[etopol',ones(size(dp))])
 % %figure(1), plotmesh(coord',[etopol',dp])
 % camva('manual');
 % camlight('headlight')
