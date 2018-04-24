@@ -6,7 +6,7 @@ use translations
 implicit none
 
 
-CHARACTER(LEN=38) :: arg_name, arg
+CHARACTER(LEN=38) :: arg_name, arg, siris_in
 CHARACTER(LEN=38) :: T_in, T_multi, T_coh, x1, Tname, mueller_file, T_multi_tot
 
 integer :: num_args, i_arg, Nmax, N, nm, i1, N_theta, N_phi, phi, th
@@ -22,7 +22,12 @@ complex(8), dimension(:), allocatable :: a_in, b_in, a_in2, b_in2
 real(8), dimension(:,:), allocatable :: S_out, S_ave, S_out_ave, Cexts
 real(8), dimension(:), allocatable :: Cabs_vec
 real(8) :: Csca, Cabs_ic, Cextu, Cscau, Cabsu
+integer :: ind(7), ii, jj
 
+siris_in = 'siris_pmatrix.in'
+
+
+ind=[1,2,3,7,12,13,17]
    ! Default arguments
    T_in = 'T'
    T_multi = 'T_multi_ic.h5'
@@ -259,6 +264,13 @@ print*, 'mfp_ic =', (4.0/3.0*pi*((elem_ka/k)**3.0)) / (Csca_ic_ave + Cabs_ave)
 
 !print*, 'mfp_ic(old) =', (4.0/3.0*pi*((elem_ka/k)**3.0)) / (Csca_ic_ave + Cabs_ic_ave)
 
+
+      OPEN(UNIT=11, FILE=siris_in, ACTION="write", STATUS="replace")
+      DO ii=1,N_theta
+         WRITE(11,*) (S_ave(ii,ind(jj)), jj=1,7)
+      END DO
+      
+      CLOSE(11)
 
 
 
