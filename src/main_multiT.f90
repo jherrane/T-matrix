@@ -19,7 +19,7 @@ complex(8), dimension(:,:), allocatable :: Taa_c, Tab_c, Tba_c, Tbb_c
 complex(8), dimension(:,:), allocatable :: Taa_ic, Tab_ic, Tba_ic, Tbb_ic
 complex(8), dimension(:), allocatable :: a_nm, b_nm, a_nm2, b_nm2
 complex(8), dimension(:), allocatable :: a_in, b_in, a_in2, b_in2
-real(8), dimension(:,:), allocatable :: S_out, S_ave, S_out_ave, Cexts
+real(8), dimension(:,:), allocatable :: S_out, S_ave, S_out_ave, Cexts, Cexts_tot
 real(8), dimension(:), allocatable :: Cabs_vec
 real(8) :: Csca, Cabs_ic, Cextu, Cscau, Cabsu
 integer :: ind(7), ii, jj
@@ -100,6 +100,7 @@ allocate(Tbb_ic(nm,nm))
 
 allocate(Cabs_vec(N))
 allocate(Cexts(2,N))
+allocate(Cexts_tot(2,N))
 
 allocate(a_nm(nm), b_nm(nm))
 allocate(a_in(nm), b_in(nm))
@@ -152,6 +153,9 @@ do i1 = 1,N
    Csca_ave = Csca_ave + crs(2)/N
    Cabs_ave = Cabs_ave + crs(3)/N
 
+   Cexts_tot(1,i1) = crs(2) + crs(3)
+   Cexts_tot(2,i1) = crs(2)/(crs(2) + crs(3))
+ 
    if(crs(3)<0) print*, 'negative absorption'
    Cabs_vec(i1) = abs(crs(3))
 
@@ -164,8 +168,8 @@ end do
 
 call tr_T(Taa_c, Tbb_c, Tab_c, Tba_c, k, crs)
 
-!print*, 'Cext_c ave =', crs(1)
-!print*, 'Csca_c ave =', crs(2)
+print*, 'Cext_c ave =', crs(1)
+print*, 'Csca_c ave =', crs(2)
 
 print*, 'Csca ave =', Csca_ave
 print*, 'Cabs ave =', Cabs_ave
@@ -197,7 +201,8 @@ do i1 = 1,N
    Cexts(1,i1) = crs(2) + Cabs_vec(i1)
    Cexts(2,i1) = crs(2)/(crs(2) + Cabs_vec(i1))
 
-
+   
+   
    print*, 'Cext=', Cexts(1,i1), 'al', Cexts(2,i1)
 
    ! solve scattering 
@@ -252,11 +257,13 @@ call real_write2file(S_ave,mueller_file)
 print*, 'Csca ave =', Csca_ave
 print*, 'Cabs ave =', Cabs_ave
 print*, 'Cext ave =', Cabs_ave + Csca_ave
-print*, 'Albedo  =', Csca_ic_ave/(Csca_ic_ave+Cabs_ave)
+print*, 'Albedo_ic  =', Csca_ic_ave/(Csca_ic_ave+Cabs_ave)
 !print*, 'Albedo (old) =', albedo
 print*, 'Csca_ic ave =', Csca_ic_ave
 print*, 'Cabs_ic ave =', Cabs_ave
 print*, 'Cext_ic ave =', Csca_ic_ave + Cabs_ave
+
+print*, 'Csca_c ave =', Cabs_ave + Csca_ave -  Cabs_ave - Csca_ic_ave
 
 print*, 'kappa_s_ic =', Csca_ic_ave / (4.0/3.0*pi*((elem_ka/k)**3.0))
 
