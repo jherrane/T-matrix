@@ -31,7 +31,7 @@ do tet = 1, mesh%N_tet
 
    mat(ind1,1:nm) = MM_nm * sqrt(vol)
    mat(ind1,nm+1:2*nm) = NN_nm * sqrt(vol)
-
+   print*, ind1, nm, mat(ind1,1)
 end do
 
 

@@ -5,7 +5,6 @@ use sparse
 use sparse_mat
 implicit none
 
-
 contains
 
 subroutine compute_Ax2(matrices, mesh)
@@ -18,14 +17,7 @@ double complex, dimension(:,:), allocatable :: X_xyz
 integer :: x, y, z, i1, mm, T1, T2, rate, i2, Nbasis
 double precision :: k2, scale
 
-if(mesh%order == 0) then
-   Nbasis = 1
-end if
-if(mesh%order == 1) then
-   Nbasis = 4
-end if
-
-
+Nbasis = 1
 k2 = mesh%k**2
 mm = mesh%Nx*mesh%Ny*mesh%Nz
 
@@ -42,23 +34,11 @@ allocate(tmp(mm))
 
 ! Old solution vector 
 
-if(mesh%order == 0)then
-   do i1 = 1,mesh%N_tet
-      X_xyz(i1,1) = matrices%x(3*(i1-1)+1)
-      X_xyz(i1,2) = matrices%x(3*(i1-1)+2)
-      X_xyz(i1,3) = matrices%x(3*(i1-1)+3)
-   end do
-end if
-
-if(mesh%order == 1) then
-   do i1 = 1,mesh%N_tet
-      do i2 = 1,4
-         X_xyz(4*(i1-1)+i2,1) = matrices%x(12*(i1-1)+i2)
-         X_xyz(4*(i1-1)+i2,2) = matrices%x(12*(i1-1)+4+i2)
-         X_xyz(4*(i1-1)+i2,3) = matrices%x(12*(i1-1)+8+i2)
-      end do
-   end do
-end if
+do i1 = 1,mesh%N_tet
+   X_xyz(i1,1) = matrices%x(3*(i1-1)+1)
+   X_xyz(i1,2) = matrices%x(3*(i1-1)+2)
+   X_xyz(i1,3) = matrices%x(3*(i1-1)+3)
+end do
 
 !--------------- Projections into the grid nodes ----------------------------!
 
@@ -72,21 +52,17 @@ call IFFT3d_2(SS)
 
 Y_xx = sparse_eps_matmul(mesh%param, matrices%S, matrices%indS, arr2vec(mesh,SS),Nbasis)
 
-
-
 call vec2arr2(SS, mesh, sparse_T_matmul(matrices%S,matrices%indS,X_xyz(:,2),mm))
 call FFT3d_2(SS)
 SS = matrices%Fg * SS
 call IFFT3d_2(SS)
 Y_yy = sparse_eps_matmul(mesh%param, matrices%S, matrices%indS, arr2vec(mesh,SS),Nbasis)
 
-
 call vec2arr2(SS, mesh, sparse_T_matmul(matrices%S,matrices%indS,X_xyz(:,3),mm))
 call FFT3d_2(SS)
 SS = matrices%Fg * SS
 call IFFT3d_2(SS)
 Y_zz = sparse_eps_matmul(mesh%param, matrices%S, matrices%indS, arr2vec(mesh,SS),Nbasis)
-
 
 call vec2arr2(SS, mesh, sparse_T_matmul(matrices%Sx,matrices%indS,X_xyz(:,1),mm))
 call FFT3d_2(SS)
@@ -95,7 +71,6 @@ call IFFT3d_2(SS)
 Y2_x = sparse_eps_matmul(mesh%param, matrices%Sx, matrices%indS, arr2vec(mesh,SS),Nbasis)
 Y2_y = sparse_eps_matmul(mesh%param, matrices%Sy, matrices%indS, arr2vec(mesh,SS),Nbasis)
 Y2_z = sparse_eps_matmul(mesh%param, matrices%Sz, matrices%indS, arr2vec(mesh,SS),Nbasis)
-
 
 call vec2arr2(SS, mesh, sparse_T_matmul(matrices%Sy,matrices%indS,X_xyz(:,2),mm))
 call FFT3d_2(SS)
@@ -113,58 +88,29 @@ Y2_x = Y2_x + sparse_eps_matmul(mesh%param, matrices%Sx, matrices%indS, arr2vec(
 Y2_y = Y2_y + sparse_eps_matmul(mesh%param, matrices%Sy, matrices%indS, arr2vec(mesh,SS),Nbasis)
 Y2_z = Y2_z + sparse_eps_matmul(mesh%param, matrices%Sz, matrices%indS, arr2vec(mesh,SS),Nbasis)
 
-
-
 !-------------------------- Construct final vector--------------------------------------
 allocate(Y_aim(3*Nbasis*mesh%N_tet))
 
-if(mesh%order == 0) then
-   do i1 = 1, mesh%N_tet
-      Y_aim(3*(i1-1)+1) = Y2_x(i1) - mesh%k**2 * Y_xx(i1)
-      Y_aim(3*(i1-1)+2) = Y2_y(i1) - mesh%k**2 * Y_yy(i1)
-      Y_aim(3*(i1-1)+3) = Y2_z(i1) - mesh%k**2 * Y_zz(i1)
-   end do
-end if
-
-if(mesh%order == 1) then
-   do i1 = 1, mesh%N_tet
-      do i2 = 1,4
-         Y_aim(12*(i1-1)+i2) = Y2_x(4*(i1-1)+i2) - mesh%k**2 * Y_xx(4*(i1-1)+i2)
-         Y_aim(12*(i1-1)+4+i2) = Y2_y(4*(i1-1)+i2) - mesh%k**2 * Y_yy(4*(i1-1)+i2)
-         Y_aim(12*(i1-1)+8+i2) = Y2_z(4*(i1-1)+i2) - mesh%k**2 * Y_zz(4*(i1-1)+i2)
-      end do
-   end do
-end if
+do i1 = 1, mesh%N_tet
+   Y_aim(3*(i1-1)+1) = Y2_x(i1) - mesh%k**2 * Y_xx(i1)
+   Y_aim(3*(i1-1)+2) = Y2_y(i1) - mesh%k**2 * Y_yy(i1)
+   Y_aim(3*(i1-1)+3) = Y2_z(i1) - mesh%k**2 * Y_zz(i1)
+end do
 
 !--------------------- Multiply with the sparse matrix--------------------------------- 
 
-if(mesh%order == 0) then
-   y_new =  matmul_Acorr_const(matrices%sp_mat,matrices%sp_ind,matrices%x) + Y_aim
-end if
-
-if(mesh%order == 1) then
-   y_new =  matmul_Acorr(matrices%sp_mat,matrices%sp_ind,matrices%x) + Y_aim
-end if
-
+y_new =  matmul_Acorr_const(matrices%sp_mat,matrices%sp_ind,matrices%x) + Y_aim
 matrices%Ax = Y_new
 
-
 end subroutine compute_Ax2
-
-
-
-
 
 !****************************************************************
 
 subroutine gmres(matrices,mesh)
 type (data) :: matrices
 type (mesh_struct) :: mesh
-
 double complex, dimension(:), allocatable :: r, x, w, cs, sn, g, y 
 double complex, dimension(:,:), allocatable :: v, h
-
-
 integer :: N, max_iter, k, j, i, iter, m, ite, T1, T2, rate, dest, ierr, N_procs
 double precision :: err_tol, b_norm, error, nu, normav, normav2
 double complex :: temp(2), tmp, hr
@@ -199,7 +145,6 @@ ite = 0
 
 print*, 'Start iterating'
 do iter = 1,max_iter
-  
    matrices%x = x
   
    call compute_Ax2(matrices,mesh)
@@ -208,7 +153,6 @@ do iter = 1,max_iter
    v(:,1) = r / sqrt(dot_product(r,r))
    g(:) = dcmplx(0.0,0.0)
    g(1) = sqrt(dot_product(r,r))
- 
 
    do i = 1, m
       call system_clock(T1,rate)
@@ -218,7 +162,6 @@ do iter = 1,max_iter
       w = matrices%Ax
       	
       normav = dble(sqrt(dot_product(w, w)))
-
 
       !_______Modified Gram-Schmidt____________________________
       do k = 1,i
@@ -243,8 +186,7 @@ do iter = 1,max_iter
 
       if(h(i+1,i) .ne. 0.0) then
          v(:,i+1) = v(:,i+1) / h(i+1,i)
-      end if
-      
+      end if 
 
    !_____ apply Givens rotations_________________________________
       if(i>1) then        
@@ -268,11 +210,10 @@ do iter = 1,max_iter
          g(i+1) = sn(i)*temp(1) + conjg(cs(i))*temp(2)
       end if
 
-      error  = abs(g(i+1)) / b_norm;
-       
+      error  = abs(g(i+1)) / b_norm     
      
       if(error < err_tol) then
-         y = matmul(Cinv(H(1:i,1:i)) , g(1:i));
+         y = matmul(Cinv(H(1:i,1:i)) , g(1:i))
          x = x + matmul(V(:,1:i),y)
          exit       
       end if
@@ -282,7 +223,6 @@ do iter = 1,max_iter
       ite = ite + 1
 
       error  = abs(g(i+1)) / b_norm;
-
    end do
 
    if (error < err_tol) then
@@ -299,7 +239,6 @@ do iter = 1,max_iter
    if (error < err_tol) then
       exit
    end if
-
 end do
 
 matrices%x = x

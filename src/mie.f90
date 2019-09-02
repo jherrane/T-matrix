@@ -472,8 +472,6 @@ complex(dp) :: P(3), B(3), C(3), Y, Y1, Y2, M_nm(3), N_nm(3)
 real(dp), dimension(:), allocatable :: L, L1, L2
 complex(dp), dimension(3,(Nmax+1)**2-1) :: MM_nm, NN_nm
 
-
-
 vec = cart2sph(Po)
 
 r = vec(1)
@@ -481,11 +479,9 @@ theta = vec(2)
 phi = vec(3)
 
 kr = k*r
-
 omega = real(k)*299792458.0
 
 allocate(sphj(Nmax+2), sphy(Nmax+2), sphh(Nmax+2))
-
 
 ! spherical bessel functions at kr
 if(inou == 0) then
@@ -493,12 +489,9 @@ if(inou == 0) then
    sphh = sphj
 else    
    sphh = sphankel(Nmax+1, kr)
-  
 end if
 
-
 ind = 0
-
 
 do n = 1, Nmax
    alpha = sphh(n+1)
@@ -522,7 +515,6 @@ do n = 1, Nmax
       ! Unnormalized complex scalar spherical harmonics
       Y=L(mm+1)*exp(dcmplx(0.0, m*phi));
       Y1=L1(mm+1)*exp(dcmplx(0.0, m*phi));
-     
  
       if(mm == n) then
          Y2 = dcmplx(0.0,0.0)
@@ -536,7 +528,6 @@ do n = 1, Nmax
 
       Y1=Y1*((n-mm+1.0d0)/(n+1.0d0))
 
-     
       Y2=Y2*(dble(n+mm)/dble(n))
 
       B(:) = dcmplx(0.0,0.0)

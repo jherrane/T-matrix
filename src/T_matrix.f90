@@ -28,16 +28,10 @@ print*,'Done in', real(T2-T1)/real(rate), 'seconds'
 
 
 do nm = 1,size(mat,2)
-
+   write(*,'(2(A,I0))') 'Iteration ', nm, '/', size(mat,2)
    matrices%rhs = mat(:,nm)
    call gmres(matrices,mesh)
-
-   Cabs = compute_Cabs(matrices, mesh)
-   print*, Cabs
-
    T_mat(:,nm) = matmul(transpose(conjg(mat)),matrices%x)
-
-   print*, nm, '/',size(mat,2)
 end do
 
 nm = (Nmax+1)**2-1
