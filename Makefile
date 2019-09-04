@@ -40,7 +40,7 @@ ${BUILDDIR}/projection.o \
 ${BUILDDIR}/build_G.o \
 ${BUILDDIR}/gmres_module.o \
 ${BUILDDIR}/rhs.o \
-${BUILDDIR}/ransformation_matrices.o \
+${BUILDDIR}/transformation_matrices.o \
 ${BUILDDIR}/T_matrix.o \
 ${BUILDDIR}/main.o
 
