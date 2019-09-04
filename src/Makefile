@@ -10,7 +10,7 @@ FFTW_ROOT = usr/local
 
 INCLUDES = -I/${FFTW_ROOT}/include/ -I/${H5ROOT}/include/ -I/usr/include -m64  
 
-OBJECTS = common.o sfunctions.o translations.o mie.o possu.o sparse.o singularity_subtraction.o singularity_subtraction_N.o integrals.o integration_points.o geometry.o sparse_mat.o io.o precorrection.o projection.o build_G.o gmres_module.o rhs.o field.o solver.o transformation_matrices.o T_matrix.o main.o
+OBJECTS = common.o sfunctions.o translations.o possu.o sparse.o singularity_subtraction.o singularity_subtraction_N.o integrals.o integration_points.o geometry.o sparse_mat.o io.o precorrection.o projection.o build_G.o gmres_module.o rhs.o transformation_matrices.o T_matrix.o main.o
 
 OBJECTS2 = common.o io.o sfunctions.o translations.o mie.o main_multiT.o
 

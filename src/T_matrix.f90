@@ -2,7 +2,6 @@ module T_matrix
 use common
 use transformation_matrices
 use gmres_module 
-use field
 implicit none 
 
 contains

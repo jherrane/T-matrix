@@ -7,7 +7,7 @@ double precision, parameter :: pi = 4.0_dp*atan(1.0_dp)
 double precision, parameter :: epsilon = 8.854187817*(10**(-12.0))
 double precision, parameter :: mu = 4.0*pi*10.0**(-7.0)
 integer, parameter :: nthreads = 24
-
+integer :: T_size = 0
 
 type mesh_struct
   integer, dimension(:,:), allocatable :: etopol, etopol_box, tetras, etopol_edges, edges
@@ -18,13 +18,16 @@ type mesh_struct
   double precision, dimension(3) :: min_coord  
   double precision :: delta, k, box_delta, tol, grid_size
   integer :: M1_loc, M2_loc, N1_loc, N2_loc
+  
+  double precision :: a = 1d-7
+  double precision, dimension(:), allocatable ::  ki  
 end type mesh_struct
 
 
 type data
-   double complex, dimension(:,:,:), allocatable :: Fg
-   double complex, dimension(:,:), allocatable :: S, Sx, Sy, Sz, E_field 
-   double complex, dimension(:,:), allocatable :: S_loc, Sx_loc, Sy_loc, Sz_loc
+   double complex, dimension(:,:,:), allocatable :: Fg, Taai, Tbbi, Tabi, Tbai
+   double complex, dimension(:,:), allocatable :: S, Sx, Sy, Sz, E_field, &
+                                                  Taa, Tbb, Tab, Tba
    integer, dimension(:), allocatable :: S_tet_loc
    integer, dimension(:,:), allocatable :: indS, T_ind, indS_loc 
    double complex, dimension(:), allocatable ::  x,Ax,rhs
@@ -34,6 +37,11 @@ type data
    double precision, dimension(:,:), allocatable :: field_points, T
    complex, dimension(:,:,:), allocatable :: sp_mat
    integer, dimension(:,:), allocatable :: sp_ind
+   integer, dimension(:), allocatable :: Nmaxs
+   integer :: Nmax
+   
+   integer                 :: bars = 1
+   character(LEN=80) :: tname = 'T.h5'
 end type data
 
 contains
@@ -617,6 +625,37 @@ end if
 
 end function truncation_order
 
+function file_exists(fname) result(exists)
+   logical :: exists
+   CHARACTER(LEN=80) :: fname
 
+   inquire (file=trim(fname), exist=exists)
+
+end function file_exists
+
+function get_tetra_vol(mesh) result(volume)
+type (mesh_struct) :: mesh
+      real(dp)                      ::  volume, V, totV
+      integer                       ::  i1
+      real(dp), dimension(3)    ::  p0, p1, p2, p3
+
+      totV = 0.d0
+
+      do i1 = 1, mesh%N_tet
+         ! Get vertices
+         p0 = mesh%coord(:, mesh%etopol(1, i1))
+         p1 = mesh%coord(:, mesh%etopol(2, i1))
+         p2 = mesh%coord(:, mesh%etopol(3, i1))
+         p3 = mesh%coord(:, mesh%etopol(4, i1))
+
+         V = abs(dot_product((p0 - p3), &
+                             crossRR((p1 - p3), (p2 - p3))))/6d0
+
+         totV = totV + V
+      end do
+
+      volume = totV
+
+   end function get_tetra_vol
 
 end module common
