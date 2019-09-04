@@ -65,11 +65,11 @@ if(my_id == 0) then
   
       select case(arg_name)
       
-      case('-mesh')
+      case('-m')
          call get_command_argument(i_arg+1,arg)
          meshname = arg
          print*, 'Mesh file is: ', meshname
-      case('-T_out')
+      case('-T')
          call get_command_argument(i_arg+1,arg)
          tname = arg
          print*, 'T-matrix is written in the file: ', tname
@@ -82,8 +82,10 @@ if(my_id == 0) then
 
       case('-help')
          print*, 'Command line parameters' 
-         print*, '-mesh mesh.h5      "Read mesh from file"' 
-         print*, '-a 1.0d-7          "Scatterer size"'
+         print*, '-m mesh.h5      "Read mesh from file"'
+         print*, '-T T.h5         "T-matrix file"'
+         print*, '-a 1.0d-7       "Scatterer size"'
+         print*, '-lambda 6d-7    "Wavelength"'
          stop
       case default 
          print '(a,a,/)', 'Unrecognized command-line option: ', arg_name
