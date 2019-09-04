@@ -55,7 +55,7 @@ if(my_id == 0) then
    ! Default arguments
    meshname = 'mesh.h5'
    projector = 'pfft'
-   tname = 'T.h5'
+   matrices%tname = 'T.h5'
    lambda = 600d-9
    mesh%a = 1d-7
    
@@ -71,8 +71,8 @@ if(my_id == 0) then
          print*, 'Mesh file is: ', meshname
       case('-T')
          call get_command_argument(i_arg+1,arg)
-         tname = arg
-         print*, 'T-matrix is written in the file: ', tname
+         matrices%tname = arg
+         print*, 'T-matrix is written in the file: ', matrices%tname
       case('-a')
          call get_command_argument(i_arg+1,arg)
          read(arg,*) mesh%a 
