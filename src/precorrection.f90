@@ -6,6 +6,7 @@ use possu
 use geometry
 use sparse !lin
 use sparse_mat
+use mpi
 
 implicit none
 
@@ -126,11 +127,11 @@ end subroutine precorrect_lin
 !***********************************************************************
 
 subroutine compute_near_zone_interactions_const(matrices,mesh)
-type (mesh_struct), intent(in) :: mesh
-type (data) :: matrices
+type (mesh_struct) :: mesh
+type (data), intent(inout) :: matrices
 
 integer(kind=8) :: mem
-integer :: t_cube, b_cube, i1, t1, b1, tet_T, tet_B
+integer :: t_cube, b_cube, i1, i2, t1, b1, tet_T, tet_B
 integer :: T_nodes(4), B_nodes(4), bases(mesh%N_tet_cube), tests(mesh%N_tet_cube)
 integer, dimension(:), allocatable :: near_cubes
 double precision ::  vol_T, vol_B, B_coord(3,4), T_coord(3,4)
@@ -140,14 +141,22 @@ double precision :: T_rot(3,6), T_dN(3,4), B_rot(3,6), B_dN(3,4)
 double precision, dimension(:,:), allocatable :: P0_tet, P0_tri
 double precision, dimension(:), allocatable :: w0_tet, w0_tri
 double complex :: alok(3,3), alok1(3,3), alok2(3,3)
+complex, dimension(:,:,:), allocatable :: sp_mat
+integer, dimension(:,:), allocatable :: sp_ind
+integer, dimension(:), allocatable :: bloks
 
-integer :: blok, M_cube
+integer :: blok, M_cube, my_id, N_procs, N1, N2, block_size, ierr
+
+call MPI_COMM_SIZE(MPI_COMM_WORLD,N_procs,ierr)
+call MPI_COMM_RANK(MPI_COMM_WORLD, my_id, ierr)
 
 M_cube = (2*mesh%near_zone + 1)**3
 
 allocate(Gcorr(size(mesh%etopol_box,1),size(mesh%etopol_box,1)))
 
 allocate(near_cubes(M_cube))
+allocate(bloks(N_procs))
+bloks=0
 
 corr(:,:) = dcmplx(0.0,0.0)
 corr2(:,:) = dcmplx(0.0,0.0)
@@ -156,13 +165,15 @@ call inttetra(P0_tet,w0_tet,5)
 call inttri(P0_tri,w0_tri,5)
 
 call allocate_Acorr(matrices%sp_mat,matrices%sp_ind, mesh)
-
-
 matrices%sp_mat(:,:,:) = cmplx(0.0,0.0)
 matrices%sp_ind(:,:) = 0
 
-mem = sizeof(matrices%sp_mat)/1024/1024 + &
-sizeof(matrices%sp_ind)/1024/1024 + &
+call allocate_Acorr(sp_mat,sp_ind, mesh)
+sp_mat(:,:,:) = cmplx(0.0,0.0)
+sp_ind(:,:) = 0
+
+mem = sizeof(matrices%sp_mat)/1024/1024*2 + &
+sizeof(matrices%sp_ind)/1024/1024*2 + &
 sizeof(matrices%S)/1024/1024 * 4 + &
 sizeof(matrices%indS)/1024/1024 + &
 sizeof(matrices%Fg)/1024/1024*2 + &
@@ -173,11 +184,25 @@ sizeof(mesh%etopol_box)/1024/1024 + &
 sizeof(mesh%nodes)/1024/1024 + &
 sizeof(mesh%tetras)/1024/1024
 
-print*, 'Estimated memory usage:', mem, 'Mb'
+if(my_id==0) print*, 'Estimated memory usage/node:', mem, 'Mb'
+
+block_size = int(ceiling(dble(mesh%N_cubes)/dble(N_procs)))
+N1 = 1 + my_id * block_size
+N2 =  (my_id + 1) * block_size
+
+if((my_id)*block_size > mesh%N_cubes) then
+  N1 = mesh%N_cubes
+end if
+
+if((my_id+1)*block_size > mesh%N_cubes) then 
+  N2 = mesh%N_cubes
+end if
 
 blok=1
-
-do t_cube = 1, mesh%N_cubes
+!$omp parallel num_threads(nthreads) default(private) &
+!$omp shared(mesh, matrices) 
+!$omp do schedule(guided,32)
+do t_cube = N1, N2
   
    tests = mesh%tetras(:,t_cube)
    
@@ -209,61 +234,67 @@ do t_cube = 1, mesh%N_cubes
 
             if(tet_B == 0) exit
             if(tet_B >= tet_T) then
-            B_nodes =  mesh%etopol(:,tet_B)
-            B_coord = mesh%coord(:,B_nodes)           
-            vol_B = tetra_volume(B_coord) 
+               B_nodes =  mesh%etopol(:,tet_B)
+               B_coord = mesh%coord(:,B_nodes)           
+               vol_B = tetra_volume(B_coord) 
 
-            call gradshape(B_rot,B_dN,B_coord)
+               call gradshape(B_rot,B_dN,B_coord)
 
-            !_________-Correction term____________________________________
-          
-            call precorrect_const(matrices, tet_T, tet_B, Gcorr, corr, corr2)
-            corr = corr * sqrt(vol_T * vol_B)
-            corr2 = corr2 * sqrt(vol_T * vol_B)
+               !_________-Correction term____________________________________
+             
+               call precorrect_const(matrices, tet_T, tet_B, Gcorr, corr, corr2)
+               corr = corr * sqrt(vol_T * vol_B)
+               corr2 = corr2 * sqrt(vol_T * vol_B)
 
-            !_____________________________________________________________ 
+               !_____________________________________________________________ 
 
-            alok(:,:) = dcmplx(0.0,0.0)
-            if(tet_T == tet_B) then 
-               alok(1,1) = 1.0 / (ele_param-1.0) 
-               alok(2,2) = 1.0 / (ele_param-1.0) 
-               alok(3,3) = 1.0 / (ele_param-1.0) 
+               alok(:,:) = dcmplx(0.0,0.0)
+               if(tet_T == tet_B) then 
+                  alok(1,1) = 1.0 / (ele_param-1.0) 
+                  alok(2,2) = 1.0 / (ele_param-1.0) 
+                  alok(3,3) = 1.0 / (ele_param-1.0)               
+               end if                    
+
+               call integrate_V_V_G(alok1,mesh,P0_tet, w0_tet,P0_tet, w0_tet,T_coord, B_coord) 
+               call integrate_dV_dV_G(alok2,mesh,P0_tri,w0_tri,P0_tri,w0_tri ,T_coord,B_coord)
               
-               !alok(1,1) = ele_param / (ele_param-1.0) 
-               !alok(2,2) = ele_param / (ele_param-1.0) 
-               !alok(3,3) = ele_param / (ele_param-1.0) 
+               mat_block = alok + 1.0/sqrt(vol_B*vol_T) * &
+   (-mesh%k**2 * (alok1-corr) + (alok2 - corr2) )
+
+               sp_mat(:,:,blok) = cmplx(mat_block)
+               sp_ind(1,blok) = tet_T
+               sp_ind(2,blok) = tet_B
+
+               blok=blok+1
             end if
-          
-          
-
-            call integrate_V_V_G(alok1,mesh,P0_tet, w0_tet,P0_tet, w0_tet,T_coord, B_coord) 
-            call integrate_dV_dV_G(alok2,mesh,P0_tri,w0_tri,P0_tri,w0_tri ,T_coord,B_coord)
-           
-            !call integrate_nx_dV_dV_G(alok2,mesh,P0_tri,w0_tri,P0_tri,w0_tri ,T_coord,B_coord)
-           
-            ! call integrate_dV_V_gradG(alok2,mesh,P0_tet,w0_tet,P0_tri,w0_tri ,T_coord,B_coord)
-  
-          
-
-            mat_block = alok + 1.0/sqrt(vol_B*vol_T) * &
-(-mesh%k**2 * (alok1-corr) + (alok2 - corr2) )
-
-            !mat_block = alok + 1.0/sqrt(vol_B*vol_T) * &
-!(-mesh%k**2 * (-corr) + (-alok2 - corr2) )
-
-           
-            matrices%sp_mat(:,:,blok) = cmplx(mat_block)
-            matrices%sp_ind(1,blok) = tet_T
-            matrices%sp_ind(2,blok) = tet_B
-
-            blok=blok+1
-        
-         end if
          end do  
       end do       
    end do  
 end do
+!$omp end do
+!$omp end parallel
 
+! Gather results to all processes
+call MPI_GATHER(blok,1,MPI_INTEGER,bloks,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+call MPI_BCAST(bloks, size(bloks), MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+
+if(my_id==0) then 
+   i1 = 1
+else
+   i1 = sum(bloks(1:my_id)-1)+1
+endif
+i2 = sum(bloks(1:my_id+1)-1)
+
+matrices%sp_mat(:,:,:) = cmplx(0.0,0.0)
+matrices%sp_ind(:,:) = 0
+matrices%sp_mat(:,:,i1:i2) = sp_mat(:,:,1:blok-1)
+matrices%sp_ind(:,i1:i2) = sp_ind(:,1:blok-1)
+
+call MPI_ALLREDUCE(MPI_IN_PLACE, matrices%sp_mat, size(matrices%sp_mat), &
+MPI_COMPLEX, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+call MPI_ALLREDUCE(MPI_IN_PLACE, matrices%sp_ind, size(matrices%sp_ind), &
+MPI_INTEGER,        MPI_SUM, MPI_COMM_WORLD, ierr)
 
 end subroutine compute_near_zone_interactions_const
 

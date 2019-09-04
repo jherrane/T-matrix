@@ -10,6 +10,7 @@ use transformation_matrices
 use T_matrix
 use mie
 use translations
+use mpi
 
 implicit none
 
@@ -40,8 +41,20 @@ CHARACTER(LEN=38) :: mueller_out2
 CHARACTER(LEN=38) :: tname
 integer :: cont, tet, num_args, i_arg, Nmax, n, Tmat
 
+integer :: status(MPI_STATUS_SIZE)
+call MPI_INIT(ierr)
+
 call system_clock(wt1,wrate)
 
+if (ierr .ne. MPI_SUCCESS) then
+   print *,'Error starting MPI program. Terminating.'
+   call MPI_ABORT(MPI_COMM_WORLD, rc, ierr)
+end if
+
+call MPI_COMM_RANK (MPI_COMM_WORLD, my_id, ierr)
+call MPI_COMM_SIZE (MPI_COMM_WORLD, N_procs, ierr)
+
+if(my_id == 0) then 
    print *,'*************************************************************'
    print *,'**                                                         **'
    print *,'**               JVIE T-matrix v. 0.1                       **'
@@ -118,19 +131,49 @@ call system_clock(wt1,wrate)
    print*,'   Wavenumber           =', real(k)
    print*,'   Wavelength           = ', real(2*pi / k)
    print*, 'Done'
+end if
+
+call MPI_Bcast(mesh%N_tet,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%tol,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%restart,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%maxit,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%grid_size,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%near_zone,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%order,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%M_ex,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%k,1,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%N_node,1,MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+
+call MPI_Bcast(matrices%khat,3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(matrices%E0,3,MPI_DOUBLE_COMPLEX,0,MPI_COMM_WORLD,ierr)
+
+if(my_id .ne. 0) then
+   allocate(mesh%coord(3,mesh%N_node))
+   allocate(mesh%etopol(4,mesh%N_tet))
+   allocate(mesh%param(mesh%N_tet))
+end if
+
+call MPI_Bcast(mesh%coord,size(mesh%coord),MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%param,size(mesh%param),MPI_DOUBLE_COMPLEX,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(mesh%etopol,size(mesh%etopol),MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+
+if(my_id == 0) then 
    print*,'Initializing FFT... '
+end if
 
    call build_grid2(mesh) 
    call build_box(mesh)
    call tetras_in_cubes(mesh)
    call build_G(matrices, mesh, my_id, N_procs)
 
+if(my_id == 0) then 
    print *,'   Grid size            =', (/mesh%Nx,mesh%Ny,mesh%Nz/)
    print *,'   Delta grid           =', real(mesh%delta) 
    print *,'   Number of cubes      =', mesh%N_cubes
    print *,'   Delta cubes          =', real(mesh%box_delta)
    print *,'   Elems. in cube (max) =', mesh%N_tet_cube
-print*,'Done'
+   print*,'Done'
+end if
 
 !________________________________________________________________________
 
@@ -138,36 +181,67 @@ allocate(matrices%rhs(3*mesh%N_tet))
 allocate(matrices%x(3*mesh%N_tet))
 allocate(matrices%Ax(3*mesh%N_tet))
 
-print*,'Constructing ', projector,'-projectors...'
+if(my_id == 0) then
+   print*,'Constructing ', projector,'-projectors...'
+end if
+
 call system_clock(T1,rate)
-call pfft_projection_const(matrices,mesh)
+call pfft_projection_const(matrices,mesh,my_id)
 call system_clock(T2)
-print*,'Done in', real(T2-T1)/real(rate), 'seconds'
+
+if(my_id == 0) then
+   print*,'Done in', real(T2-T1)/real(rate), 'seconds'
+end if
+
+call MPI_BARRIER(MPI_COMM_WORLD,ierr)
+
+call MPI_Bcast(matrices%indS,size(matrices%indS),MPI_INTEGER,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(matrices%S,size(matrices%S),MPI_DOUBLE_COMPLEX,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(matrices%Sx,size(matrices%Sx),MPI_DOUBLE_COMPLEX,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(matrices%Sy,size(matrices%Sy),MPI_DOUBLE_COMPLEX,0,MPI_COMM_WORLD,ierr)
+call MPI_Bcast(matrices%Sz,size(matrices%Sz),MPI_DOUBLE_COMPLEX,0,MPI_COMM_WORLD,ierr)
+
 !_________________________________________________________!
 
-print*,'Constructing the sparse part of the system matrix'
+if(my_id == 0) then
+   print*,'Constructing the sparse part of the system matrix'
+end if
 call system_clock(T1,rate)
 call compute_near_zone_interactions_const(matrices,mesh)
 call system_clock(T2)
-print*,'Done in', real(T2-T1)/real(rate), 'seconds'
+
+if(my_id == 0) print*,'Done in', real(T2-T1)/real(rate), 'seconds'
 
 !**********************************************
 
-Nmax = truncation_order(k) 
+Nmax = truncation_order(mesh%k*(dble(maxval([mesh%Nx, mesh%Ny, mesh%Nz])) &
+                    *mesh%delta)/2.0d0)
 
 allocate(T_mat(2*((Nmax+1)**2-1), 2*((Nmax+1)**2-1)))
 allocate(Taa((Nmax+1)**2-1, (Nmax+1)**2-1))
 allocate(Tab((Nmax+1)**2-1, (Nmax+1)**2-1))
 allocate(Tba((Nmax+1)**2-1, (Nmax+1)**2-1))
 allocate(Tbb((Nmax+1)**2-1, (Nmax+1)**2-1))
+Taa(:,:) = dcmplx(0.0)
+Tab(:,:) = dcmplx(0.0)
+Tba(:,:) = dcmplx(0.0)
+Tbb(:,:) = dcmplx(0.0)
 
-print*, 'Tmatrix size:', size(Taa,1)*2, size(Taa,2)*2
+if(my_id == 0) print*, 'Tmatrix size:', size(Taa,1)*2, size(Taa,2)*2
 
-call compute_T_matrix(matrices, mesh, k, Nmax, Taa, Tab, Tba, Tbb)
+call compute_T_matrix(matrices, mesh, mesh%k, Nmax, Taa, Tab, Tba, Tbb, my_id, N_procs)
+call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
-call T_write2file(Taa, Tab, Tba, Tbb, tname)
+call MPI_ALLREDUCE(MPI_IN_PLACE,Taa,size(Taa), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD,ierr)
+call MPI_ALLREDUCE(MPI_IN_PLACE,Tab,size(Tab), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD,ierr)
+call MPI_ALLREDUCE(MPI_IN_PLACE,Tba,size(Tba), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD,ierr)
+call MPI_ALLREDUCE(MPI_IN_PLACE,Tbb,size(Tbb), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD,ierr)
+
+if(my_id == 0) call T_write2file(Taa, Tab, Tba, Tbb, tname)
 
 call system_clock(wt2)
-print*,'Total wall-time ', real(wt2-wt1)/real(wrate), 'seconds'
+if(my_id == 0) print*,'Total wall-time ', real(wt2-wt1)/real(wrate), 'seconds'
+
+call MPI_FINALIZE(ierr)
 
 end program main

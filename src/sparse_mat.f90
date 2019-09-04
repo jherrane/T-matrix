@@ -1,6 +1,7 @@
 module sparse_mat
 use common
 use geometry
+use mpi
 implicit none
 
 contains

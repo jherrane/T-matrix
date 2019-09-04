@@ -1,0 +1,28 @@
+# Compiled Object files
+*.o
+
+# Compiled Dynamic libraries
+*.so
+
+# Fortran module files
+*.mod
+*.smod
+
+# Executables
+*.out
+
+*/other/**
+*/out/**
+/out/
+*/build/**
+/build/
+*/Geometries/**
+/Geometries/
+*/T/**
+/T/
+*.h5
+*.in
+*.png
+
+**/T_matrix
+

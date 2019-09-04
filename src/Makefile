@@ -1,4 +1,4 @@
-FC = gfortran
+FC = mpif90
 
 # flags for debugging or for maximum performance, comment as necessary
 #FCFLAGS = -O0 -g -ffast-math -funroll-loops -fbacktrace -fcheck=bounds -ffpe-trap=invalid,overflow,underflow,zero,denormal

@@ -605,16 +605,14 @@ end function rotation_angles
 
 
 function truncation_order(ka) result(Nmax)
-real(dp) :: ka 
+real(dp) :: ka, lim
 integer :: Nmax
 
-if(ka > 1.0d0) then
-   Nmax = floor(ka + 3.0* (ka)**(1.0/3.0))
+lim = 4d0
+if (ka > 1) then
+   Nmax = floor(ka + lim*(ka)**(1.0d0/3.0d0))
 else
-  if(ka<2.0d0) Nmax = 4
-   if(ka<0.1d0) Nmax = 3
-   if(ka<0.01d0) Nmax = 2
-   if(ka<0.0001d0) Nmax = 1
+   Nmax = floor(lim)
 end if
 
 end function truncation_order
