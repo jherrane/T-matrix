@@ -48,7 +48,7 @@ do nm = N1,N2
    write(*,'(2(A,I0))') 'Iteration ', nm, '/', size(mat,2)
 end do
 !$omp end do
-!$omp end paralle
+!$omp end parallel
 
 end subroutine compute_T_matrix
 
