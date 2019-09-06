@@ -38,7 +38,6 @@ end if
 
 !$omp parallel num_threads(nthreads) default(private) &
 !$omp shared(mesh, matrices, T_mat)
-!$omp do schedule(guided,32)
 do nm = N1,N2
    matrices%rhs = mat(:,nm) 
    call gmres(matrices,mesh, nm, size(mat,2))

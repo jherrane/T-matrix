@@ -107,7 +107,7 @@ if(my_id == 0) then
    print*,'Reading mesh...'
    call read_mesh(mesh, meshname) ! mesh.h5
    
-   print*,'   Wavenumber           =', real(mesh%k)
+   print*,'   a_eff                = ', real(mesh%a)
    print*,'   Wavelength           = ', real(2*pi / mesh%k)
    print*, 'Done'
 end if
@@ -200,6 +200,7 @@ Nmax = truncation_order(mesh%k*(dble(maxval([mesh%Nx, mesh%Ny, mesh%Nz])) &
                     *mesh%delta)/2.0d0)
 
 allocate(T_mat(2*((Nmax+1)**2-1), 2*((Nmax+1)**2-1)))
+T_mat(:,:) = dcmplx(0.0,0.0)
 
 if(my_id == 0) print*, 'Tmatrix size:', size(T_mat,1), size(T_mat,2)
 
