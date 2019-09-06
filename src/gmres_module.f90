@@ -143,7 +143,7 @@ w(:) = dcmplx(0.0, 0.0)
 ! GMRES ITERATIONS
 ite = 0
 
-print*, 'Start iteration ', iii, '/', NNN'
+print*, 'Start iteration ', iii, '/', NNN
 do iter = 1,max_iter
    matrices%x = x
   
