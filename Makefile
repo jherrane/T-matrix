@@ -63,8 +63,7 @@ INCSPUHTI = -I/usr/include -I/usr/local/include/ -I${FFTW_ROOT}/include/ -I${H5R
 LIBSPUHTI = -L${FFTW_ROOT}/lib -lfftw3 -lfftw3_mpi -L${H5ROOT}/lib -lhdf5_fortran -lhdf5 -Wl,--start-group $(MKLROOT)/lib/intel64/libmkl_gf_lp64.a $(MKLROOT)/lib/intel64/libmkl_core.a $(MKLROOT)/lib/intel64/libmkl_sequential.a -Wl,--end-group -lpthread -lm -ldl
 
 ifeq ($(HOSTNAME),puhti)
-	yell = "Starting Make... When in Puhti, remember to run 'module load gcc mkl fftw hdf5', and remember to keep fingers crossed that all libraries are available,
-or Make will fail. Upon failure, load modules, clean and run Make again."
+	yell = "Starting Make... When in Puhti, remember to run 'module load gcc mkl fftw hdf5', and remember to keep fingers crossed that all libraries are available, or Make will fail. Upon failure, load modules, clean and run Make again."
 	FC := $(FCPUHTI)
 	INCS := $(INCSPUHTI)
 	LIBS := $(LIBSPUHTI)
