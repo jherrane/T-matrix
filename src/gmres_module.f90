@@ -143,7 +143,7 @@ w(:) = dcmplx(0.0, 0.0)
 ! GMRES ITERATIONS
 ite = 0
 
-!!print*, 'Start iterating'
+print*, 'Start iteration ', iii, '/', NNN'
 do iter = 1,max_iter
    matrices%x = x
   
@@ -219,7 +219,7 @@ do iter = 1,max_iter
       end if
   
       call system_clock(T2)
-!      print *,'RE (',ite+1,')','=', real(error),  'time/iter =',real(T2-T1) / real(rate)
+      print *,'RE (',ite+1,')','=', real(error),  'time/iter =',real(T2-T1) / real(rate)
       ite = ite + 1
 
       error  = abs(g(i+1)) / b_norm;
@@ -243,7 +243,7 @@ end do
 
 matrices%x = x
 
-write(*,'(4(A,I0))') 'GMRES iteration ', iii, '/', NNN, 'converged in', ite, 'iterations'
+write(*,'(4(A,I0))') 'GMRES iteration ', iii, '/', NNN, ' converged in ', ite, ' iterations'
 
 end subroutine gmres
 
