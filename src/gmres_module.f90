@@ -106,12 +106,12 @@ end subroutine compute_Ax2
 
 !****************************************************************
 
-subroutine gmres(matrices,mesh)
+subroutine gmres(matrices,mesh,iii,NNN)
 type (data) :: matrices
 type (mesh_struct) :: mesh
 double complex, dimension(:), allocatable :: r, x, w, cs, sn, g, y 
 double complex, dimension(:,:), allocatable :: v, h
-integer :: N, max_iter, k, j, i, iter, m, ite, T1, T2, rate, dest, ierr, N_procs
+integer :: N, max_iter, k, j, i, iter, m, ite, T1, T2, rate, dest, ierr, N_procs, iii, NNN
 double precision :: err_tol, b_norm, error, nu, normav, normav2
 double complex :: temp(2), tmp, hr
 
@@ -243,7 +243,7 @@ end do
 
 matrices%x = x
 
-!print*, 'GMRES converged in', ite, 'iterations'
+write(*,'(4(A,I0))') 'GMRES iteration ', iii, '/', NNN, 'converged in', ite, 'iterations'
 
 end subroutine gmres
 

@@ -41,11 +41,10 @@ end if
 !$omp do schedule(guided,32)
 do nm = N1,N2
    matrices%rhs = mat(:,nm) 
-   call gmres(matrices,mesh)
+   call gmres(matrices,mesh, nm, size(mat,2))
    !$omp critical
    T_mat(:,nm) = dcmplx(0.0,k**3.0)*matmul(transpose(conjg(mat)),matrices%x)
    !$omp end critical   
-   write(*,'(2(A,I0))') 'Iteration ', nm, '/', size(mat,2)
 end do
 !$omp end do
 !$omp end parallel
