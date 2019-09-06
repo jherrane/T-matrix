@@ -172,19 +172,7 @@ call allocate_Acorr(sp_mat,sp_ind, mesh)
 sp_mat(:,:,:) = cmplx(0.0,0.0)
 sp_ind(:,:) = 0
 
-mem = sizeof(matrices%sp_mat)/1024/1024*2 + &
-sizeof(matrices%sp_ind)/1024/1024*2 + &
-sizeof(matrices%S)/1024/1024 * 4 + &
-sizeof(matrices%indS)/1024/1024 + &
-sizeof(matrices%Fg)/1024/1024*2 + &
-(5+mesh%maxit)*8*2*3*size(mesh%etopol,2)/1024/1024 + &
-sizeof(mesh%coord)/1024/1024 + &
-sizeof(mesh%etopol)/1024/1024 + &
-sizeof(mesh%etopol_box)/1024/1024 + &
-sizeof(mesh%nodes)/1024/1024 + &
-sizeof(mesh%tetras)/1024/1024
-
-if(my_id==0) print*, 'Estimated memory usage/node:', mem, 'Mb'
+if(my_id == 0) call mem_estimate(matrices,mesh)
 
 block_size = int(ceiling(dble(mesh%N_cubes)/dble(N_procs)))
 N1 = 1 + my_id * block_size
@@ -436,5 +424,30 @@ end do
 
 end subroutine compute_near_zone_interactions_lin
 
+subroutine mem_estimate(matrices, mesh)
+type (mesh_struct) :: mesh
+type (data), intent(inout) :: matrices
+integer(kind=8) :: mem, Nmax
+mem = 0
+mem = mem + sizeof(matrices%sp_mat) + &
+sizeof(matrices%sp_ind) + &
+sizeof(matrices%S) * 4 + &
+sizeof(matrices%indS) + &
+sizeof(matrices%Fg) + &
+(5+mesh%maxit)*8*2*3*size(mesh%etopol,2) + &
+sizeof(mesh%coord) + &
+sizeof(mesh%etopol) + &
+sizeof(mesh%etopol_box) + &
+sizeof(mesh%nodes) + &
+sizeof(mesh%tetras)
+
+! System matrix and T-matrix
+Nmax = truncation_order(mesh%k*(dble(maxval([mesh%Nx, mesh%Ny, mesh%Nz])) &
+                    *mesh%delta)/2.0d0)
+mem = mem + sizeof(dcmplx(1.0,0.0))*3*mesh%N_tet*2*((Nmax+1)**2 -1) + &
+sizeof(dcmplx(1.0,0.0))*(2*((Nmax+1)**2-1))**2
+
+print*, 'Estimated memory usage/node:', mem/1024/1024, 'Mb'
+end subroutine mem_estimate
 
 end module precorrection
