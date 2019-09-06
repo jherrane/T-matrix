@@ -1,7 +1,7 @@
 # Compiler options
 HOSTNAME = $(firstword $(subst -, ,$(shell hostname)))
 FC = mpif90
-FCFLAGS = -O3 -ffast-math -funroll-loops -march=native 
+FCFLAGS = -O3 -ffast-math -funroll-loops -march=native -pg
 DEBUG = -O0 -ffast-math -funroll-loops -march=native -fcheck=bounds -g -fbacktrace
 DEBUGALL = -Wall -pedantic -fcheck=all -ffpe-trap=invalid,zero,overflow
 
@@ -55,6 +55,19 @@ ifeq ($(HOSTNAME),taito)
 	FC := $(FCTAITO)
 	INCS := $(INCSTAITO)
 	LIBS := $(LIBSTAITO)
+endif
+###############################################################################
+# Puhti (test)version for everything
+FCPUHTI = mpif90
+INCSPUHTI = -I/usr/include -I/usr/local/include/ -I${FFTW_ROOT}/include/ -I${H5ROOT}/include/ -m64 -I$(MKLROOT)/include/ -J${BUILDDIR}
+LIBSPUHTI = -L${FFTW_ROOT}/lib -lfftw3 -lfftw3_mpi -L${H5ROOT}/lib -lhdf5_fortran -lhdf5 -Wl,--start-group $(MKLROOT)/lib/intel64/libmkl_gf_lp64.a $(MKLROOT)/lib/intel64/libmkl_core.a $(MKLROOT)/lib/intel64/libmkl_sequential.a -Wl,--end-group -lpthread -lm -ldl
+
+ifeq ($(HOSTNAME),puhti)
+	yell = "Starting Make... When in Puhti, remember to run 'module load gcc mkl fftw hdf5', and remember to keep fingers crossed that all libraries are available,
+or Make will fail. Upon failure, load modules, clean and run Make again."
+	FC := $(FCPUHTI)
+	INCS := $(INCSPUHTI)
+	LIBS := $(LIBSPUHTI)
 endif
 ###############################################################################
 

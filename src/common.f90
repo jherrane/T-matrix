@@ -7,7 +7,6 @@ double precision, parameter :: pi = 4.0_dp*atan(1.0_dp)
 double precision, parameter :: epsilon = 8.854187817*(10**(-12.0))
 double precision, parameter :: mu = 4.0*pi*10.0**(-7.0)
 integer, parameter :: nthreads = 24
-integer :: T_size = 0
 
 type mesh_struct
   integer, dimension(:,:), allocatable :: etopol, etopol_box, tetras, etopol_edges, edges
@@ -25,22 +24,15 @@ end type mesh_struct
 
 
 type data
-   double complex, dimension(:,:,:), allocatable :: Fg, Taai, Tbbi, Tabi, Tbai
-   double complex, dimension(:,:), allocatable :: S, Sx, Sy, Sz, E_field, &
-                                                  Taa, Tbb, Tab, Tba
-   integer, dimension(:), allocatable :: S_tet_loc
-   integer, dimension(:,:), allocatable :: indS, T_ind, indS_loc 
-   double complex, dimension(:), allocatable ::  x,Ax,rhs
-   double precision, dimension(:), allocatable :: rcs
+   double complex, dimension(:,:,:), allocatable :: Fg
+   double complex, dimension(:,:), allocatable :: S, Sx, Sy, Sz
+   integer, dimension(:,:), allocatable :: indS, indS_loc 
+   double complex, dimension(:), allocatable ::  x, Ax, rhs
    double precision, dimension(3) :: khat
    double complex, dimension(3) :: E0
-   double precision, dimension(:,:), allocatable :: field_points, T
    complex, dimension(:,:,:), allocatable :: sp_mat
    integer, dimension(:,:), allocatable :: sp_ind
-   integer, dimension(:), allocatable :: Nmaxs
-   integer :: Nmax
    
-   integer                 :: bars = 1
    character(LEN=80) :: tname = 'T.h5'
 end type data
 

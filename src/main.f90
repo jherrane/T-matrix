@@ -30,7 +30,7 @@ integer, dimension(:,:), allocatable :: indD
 
 CHARACTER(LEN=80) :: meshname, fname, arg_name, arg
 CHARACTER(LEN=80) :: tname
-integer :: cont, tet, num_args, i_arg, Nmax, n, Tmat
+integer :: cont, tet, num_args, i_arg, Nmax, n
 
 integer :: status(MPI_STATUS_SIZE)
 call MPI_INIT(ierr)
@@ -199,22 +199,12 @@ if(my_id == 0) print*,'Done in', real(T2-T1)/real(rate), 'seconds'
 Nmax = truncation_order(mesh%k*(dble(maxval([mesh%Nx, mesh%Ny, mesh%Nz])) &
                     *mesh%delta)/2.0d0)
 
-allocate(T_mat(2*((Nmax+1)**2-1), 2*((Nmax+1)**2-1)))
 allocate(Taa((Nmax+1)**2-1, (Nmax+1)**2-1))
 allocate(Tab((Nmax+1)**2-1, (Nmax+1)**2-1))
 allocate(Tba((Nmax+1)**2-1, (Nmax+1)**2-1))
 allocate(Tbb((Nmax+1)**2-1, (Nmax+1)**2-1))
 
 if(my_id == 0) print*, 'Tmatrix size:', size(Taa,1)*2, size(Taa,2)*2
-
-if(my_id == 0) then
-   allocate(mesh%ki(matrices%bars))
-   allocate(matrices%Nmaxs(matrices%bars))
-   mesh%ki = 2d0*pi/lambda
-   do i = 1, matrices%bars
-      matrices%Nmaxs(i) = truncation_order(mesh%ki(i)*(dble(maxval([mesh%Nx, mesh%Ny, mesh%Nz])) *mesh%delta)/2.0d0) 
-   end do
-end if
 
 call compute_T_matrix(matrices, mesh, mesh%k, Nmax, Taa, Tab, Tba, Tbb, my_id, N_procs)
 call MPI_BARRIER(MPI_COMM_WORLD,ierr)
@@ -226,21 +216,7 @@ call MPI_ALLREDUCE(MPI_IN_PLACE,Tbb,size(Tbb), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_
 
 call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
-if(my_id == 0) then
-   do ii = 1, 1
-      nm = (matrices%Nmaxs(ii) + 1)**2 - 1
-      T_size = T_size + nm**2
-   end do
-   call allocate_Ti(matrices)
-   call T_empty(matrices,mesh)
-   do ii = 1, 1
-      matrices%Taai(1:nm, 1:nm, ii) = Taa
-      matrices%Tabi(1:nm, 1:nm, ii) = Tab
-      matrices%Tbai(1:nm, 1:nm, ii) = Tba
-      matrices%Tbbi(1:nm, 1:nm, ii) = Tbb
-      call singleT_write2file(matrices, mesh, ii)
-   end do
-end if
+if(my_id == 0) call T_write2file(Taa, Tab, Tba, Tbb, matrices%tname)
 
 call MPI_FINALIZE(ierr)
 
