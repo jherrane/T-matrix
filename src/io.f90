@@ -95,11 +95,9 @@ end subroutine read_mesh
 
 !******************************************************************************
 
-subroutine T_write2file(Taa, Tab, Tba, Tbb, fname)
-double complex, intent(in) :: Taa(:,:)
-double complex, intent(in) :: Tab(:,:)
-double complex, intent(in) :: Tba(:,:)
-double complex, intent(in) :: Tbb(:,:)
+subroutine T_write2file(T_mat, Nmax, fname)
+double complex, intent(in) :: T_mat(:,:)
+integer, intent(in) :: Nmax
 
 CHARACTER(LEN=80), intent(in) :: fname
 character(len=80) :: filename
@@ -128,11 +126,16 @@ INTEGER(HID_T) :: dspace_id     ! Dataspace identifier
 INTEGER(HSIZE_T), DIMENSION(2) :: dims  ! Dataset dimensions
 INTEGER     ::    rank = 2                       ! Dataset rank
 
-INTEGER     ::   error ! Error flag
+INTEGER     ::   error, nm ! Error flag
 !INTEGER     :: i, j
 
 filename = fname
-dims = (/size(Taa,1),size(Taa,2)/)
+nm = (Nmax+1)**2-1
+dims = (/nm,nm/)
+!Taa = T_mat(1:nm,1:nm)
+!Tab = T_mat(1:nm, nm+1:2*nm)
+!Tba = T_mat(nm+1:2*nm,1:nm)
+!Tbb = T_mat(nm+1:2*nm,nm+1:2*nm)
      
 CALL h5open_f(error)
 
@@ -145,13 +148,13 @@ CALL h5dcreate_f(file_id, dsetname1, H5T_NATIVE_DOUBLE, dspace_id, &
                        dset_id1, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
                        H5P_DEFAULT_F)
 
-CALL h5dwrite_f(dset_id1, H5T_NATIVE_DOUBLE, real(Taa), dims, error)
+CALL h5dwrite_f(dset_id1, H5T_NATIVE_DOUBLE, real(T_mat(1:nm,1:nm)), dims, error)
 CALL h5dclose_f(dset_id1, error)
 
 CALL h5dcreate_f(file_id, dsetname2, H5T_NATIVE_DOUBLE, dspace_id, &
                        dset_id2, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
                        H5P_DEFAULT_F)
-CALL h5dwrite_f(dset_id2, H5T_NATIVE_DOUBLE, imag(Taa), dims, error)
+CALL h5dwrite_f(dset_id2, H5T_NATIVE_DOUBLE, imag(T_mat(1:nm,1:nm)), dims, error)
 CALL h5dclose_f(dset_id2, error)
 
 !******************************************************************
@@ -159,13 +162,13 @@ CALL h5dclose_f(dset_id2, error)
 CALL h5dcreate_f(file_id, dsetname3, H5T_NATIVE_DOUBLE, dspace_id, &
                        dset_id3, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
                        H5P_DEFAULT_F)
-CALL h5dwrite_f(dset_id3, H5T_NATIVE_DOUBLE, real(Tab), dims, error)
+CALL h5dwrite_f(dset_id3, H5T_NATIVE_DOUBLE, real(T_mat(1:nm, nm+1:2*nm)), dims, error)
 CALL h5dclose_f(dset_id3, error)
 
 CALL h5dcreate_f(file_id, dsetname4, H5T_NATIVE_DOUBLE, dspace_id, &
                        dset_id4, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
                        H5P_DEFAULT_F)
-CALL h5dwrite_f(dset_id4, H5T_NATIVE_DOUBLE, imag(Tab), dims, error)
+CALL h5dwrite_f(dset_id4, H5T_NATIVE_DOUBLE, imag(T_mat(1:nm, nm+1:2*nm)), dims, error)
 CALL h5dclose_f(dset_id4, error)
 
 !******************************************************************
@@ -173,13 +176,13 @@ CALL h5dclose_f(dset_id4, error)
 CALL h5dcreate_f(file_id, dsetname5, H5T_NATIVE_DOUBLE, dspace_id, &
                        dset_id5, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
                        H5P_DEFAULT_F)
-CALL h5dwrite_f(dset_id5, H5T_NATIVE_DOUBLE, real(Tba), dims, error)
+CALL h5dwrite_f(dset_id5, H5T_NATIVE_DOUBLE, real(T_mat(nm+1:2*nm,1:nm)), dims, error)
 CALL h5dclose_f(dset_id5, error)
 
 CALL h5dcreate_f(file_id, dsetname6, H5T_NATIVE_DOUBLE, dspace_id, &
                        dset_id6, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
                        H5P_DEFAULT_F)
-CALL h5dwrite_f(dset_id6, H5T_NATIVE_DOUBLE, imag(Tba), dims, error)
+CALL h5dwrite_f(dset_id6, H5T_NATIVE_DOUBLE, imag(T_mat(nm+1:2*nm,1:nm)), dims, error)
 CALL h5dclose_f(dset_id6, error)
 
 !******************************************************************
@@ -187,13 +190,13 @@ CALL h5dclose_f(dset_id6, error)
 CALL h5dcreate_f(file_id, dsetname7, H5T_NATIVE_DOUBLE, dspace_id, &
                        dset_id7, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
                        H5P_DEFAULT_F)
-CALL h5dwrite_f(dset_id7, H5T_NATIVE_DOUBLE, real(Tbb), dims, error)
+CALL h5dwrite_f(dset_id7, H5T_NATIVE_DOUBLE, real(T_mat(nm+1:2*nm,nm+1:2*nm)), dims, error)
 CALL h5dclose_f(dset_id7, error)
 
 CALL h5dcreate_f(file_id, dsetname8, H5T_NATIVE_DOUBLE, dspace_id, &
                        dset_id8, error, H5P_DEFAULT_F, H5P_DEFAULT_F, &
                        H5P_DEFAULT_F)
-CALL h5dwrite_f(dset_id8, H5T_NATIVE_DOUBLE, imag(Tbb), dims, error)
+CALL h5dwrite_f(dset_id8, H5T_NATIVE_DOUBLE, imag(T_mat(nm+1:2*nm,nm+1:2*nm)), dims, error)
 CALL h5dclose_f(dset_id8, error)
 
 !******************************************************************

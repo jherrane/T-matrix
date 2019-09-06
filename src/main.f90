@@ -22,7 +22,7 @@ character(5) :: projector
 integer :: ierr, N_procs, my_id, rc, M1, M2, i, las, i1, locs, Nbasis, i2, las2
 integer, dimension(:), allocatable :: sp_size, disp
 integer, dimension(:,:), allocatable :: M
-complex(dp), dimension(:,:), allocatable :: mat, T_mat, Taa, Tab, Tba, Tbb 
+complex(dp), dimension(:,:), allocatable :: mat, T_mat
 complex(dp), dimension(:), allocatable :: a_in, b_in, a_in2, b_in2
 complex(dp), dimension(:), allocatable :: a_nm, b_nm, a_nm2, b_nm2
 complex(8), dimension(:), allocatable :: rotD
@@ -199,24 +199,18 @@ if(my_id == 0) print*,'Done in', real(T2-T1)/real(rate), 'seconds'
 Nmax = truncation_order(mesh%k*(dble(maxval([mesh%Nx, mesh%Ny, mesh%Nz])) &
                     *mesh%delta)/2.0d0)
 
-allocate(Taa((Nmax+1)**2-1, (Nmax+1)**2-1))
-allocate(Tab((Nmax+1)**2-1, (Nmax+1)**2-1))
-allocate(Tba((Nmax+1)**2-1, (Nmax+1)**2-1))
-allocate(Tbb((Nmax+1)**2-1, (Nmax+1)**2-1))
+allocate(T_mat(2*((Nmax+1)**2-1), 2*((Nmax+1)**2-1)))
 
-if(my_id == 0) print*, 'Tmatrix size:', size(Taa,1)*2, size(Taa,2)*2
+if(my_id == 0) print*, 'Tmatrix size:', size(T_mat,1), size(T_mat,2)
 
-call compute_T_matrix(matrices, mesh, mesh%k, Nmax, Taa, Tab, Tba, Tbb, my_id, N_procs)
+call compute_T_matrix(matrices, mesh, mesh%k, Nmax, T_mat, my_id, N_procs)
 call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
-call MPI_ALLREDUCE(MPI_IN_PLACE,Taa,size(Taa), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD,ierr)
-call MPI_ALLREDUCE(MPI_IN_PLACE,Tab,size(Tab), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD,ierr)
-call MPI_ALLREDUCE(MPI_IN_PLACE,Tba,size(Tba), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD,ierr)
-call MPI_ALLREDUCE(MPI_IN_PLACE,Tbb,size(Tbb), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD,ierr)
+call MPI_ALLREDUCE(MPI_IN_PLACE,T_mat,size(T_mat), MPI_DOUBLE_COMPLEX, MPI_SUM, MPI_COMM_WORLD,ierr)
 
 call MPI_BARRIER(MPI_COMM_WORLD,ierr)
 
-if(my_id == 0) call T_write2file(Taa, Tab, Tba, Tbb, matrices%tname)
+if(my_id == 0) call T_write2file(T_mat, Nmax, matrices%tname)
 
 call MPI_FINALIZE(ierr)
 
