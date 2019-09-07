@@ -58,6 +58,8 @@ if(my_id == 0) then
    matrices%tname = 'T.h5'
    lambda = 600d-9
    mesh%a = 1d-7
+   mesh%restart = 4
+   mesh%maxit = 50
    
    num_args = command_argument_count()
    do i_arg = 1,num_args,2
@@ -79,6 +81,12 @@ if(my_id == 0) then
       case('-lambda')
          call get_command_argument(i_arg+1,arg)
          read(arg,*) lambda
+      case('-restart')
+         call get_command_argument(i_arg+1,arg)
+         read(arg,*) mesh%restart
+      case('-maxit')
+         call get_command_argument(i_arg+1,arg)
+         read(arg,*) mesh%maxit
 
       case('-help')
          print*, 'Command line parameters' 
@@ -86,6 +94,8 @@ if(my_id == 0) then
          print*, '-T T.h5         "T-matrix file"'
          print*, '-a 1.0d-7       "Scatterer size"'
          print*, '-lambda 6d-7    "Wavelength"'
+         print*, '-restart 4      "GMRES restart number"'
+         print*, '-maxit 50       "Iterations/restart"'
          stop
       case default 
          print '(a,a,/)', 'Unrecognized command-line option: ', arg_name
@@ -94,8 +104,6 @@ if(my_id == 0) then
    end do
 
    mesh%tol = 1e-3
-   mesh%restart = 4
-   mesh%maxit = 50
    matrices%khat = [0,0,1]
    matrices%E0 = dcmplx([1,0,0], 0.0)
    mesh%grid_size = 1.8
